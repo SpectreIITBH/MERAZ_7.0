@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NIGHTJAR — Live Scoreboard</title>
+<meta name="description" content="SPECTRE NIGHTJAR Live Scoreboard — real-time team rankings and progress">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=JetBrains+Mono:wght@400;700&display=swap">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#060008;--surface:#0c0014;--card:#0f0018;--red:#ff1a1a;--red-dim:#5a0a0a;--red-glow:rgba(255,26,26,.25);--yel:#ffe600;--yel-dim:#a09200;--cyan:#00f0ff;--ink:#ffd9d9;--ink-dim:#8a6a6a;--green:#00ff6a;--gold:#ffd700;--silver:#c0c0c0;--bronze:#cd7f32;--border:rgba(255,26,26,.3);--radius:6px}
+html,body{height:100%;overflow-x:hidden}
+body{background:var(--bg);color:var(--ink);font-family:"JetBrains Mono","Courier New",monospace;font-size:14px;line-height:1.6}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:9999;background:repeating-linear-gradient(0deg,rgba(0,0,0,.12) 0 2px,transparent 2px 4px)}
+
+/* ─── Animated gradient border at top ─── */
+.top-bar{height:4px;background:linear-gradient(90deg,var(--red),var(--yel),var(--cyan),var(--green),var(--red));background-size:400% 100%;animation:gradientShift 6s linear infinite}
+@keyframes gradientShift{0%{background-position:0% 50%}100%{background-position:400% 50%}}
+
+/* ─── Header ─── */
+.sb-header{text-align:center;padding:36px 20px 28px;position:relative}
+.sb-header::before{content:"";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:500px;height:500px;background:radial-gradient(circle,rgba(255,26,26,.08) 0%,transparent 70%);pointer-events:none}
+.sb-title{font-family:"Press Start 2P",monospace;font-size:clamp(16px,4vw,32px);color:var(--red);text-shadow:0 0 30px rgba(255,26,26,.5),0 4px 0 #500;letter-spacing:3px;margin-bottom:10px;position:relative}
+.sb-title span{color:var(--yel);text-shadow:0 0 20px rgba(255,230,0,.4),0 4px 0 #550}
+.sb-subtitle{font-size:11px;color:var(--ink-dim);letter-spacing:2px;text-transform:uppercase}
+.sb-live{display:inline-flex;align-items:center;gap:6px;background:rgba(255,26,26,.1);border:1px solid var(--red-dim);padding:4px 14px;border-radius:20px;font-size:10px;color:var(--red);margin-top:12px;font-family:"Press Start 2P",monospace;animation:liveGlow 2s ease infinite}
+@keyframes liveGlow{0%,100%{box-shadow:0 0 8px rgba(255,26,26,.2)}50%{box-shadow:0 0 20px rgba(255,26,26,.5)}}
+.live-dot{width:8px;height:8px;border-radius:50%;background:var(--red);animation:livePulse 1.2s infinite}
+@keyframes livePulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.7)}}
+
+/* ─── Clock ─── */
+.sb-clock{font-family:"Press Start 2P",monospace;font-size:14px;color:var(--yel);text-shadow:0 0 10px rgba(255,230,0,.3);margin-top:8px}
+
+/* ─── Container ─── */
+.sb-container{max-width:900px;margin:0 auto;padding:0 20px 60px}
+
+/* ─── Podium (top 3) ─── */
+.podium{display:flex;align-items:flex-end;justify-content:center;gap:16px;margin-bottom:36px;padding:0 20px;min-height:200px}
+.podium-slot{display:flex;flex-direction:column;align-items:center;text-align:center;transition:all .5s cubic-bezier(.34,1.56,.64,1)}
+.podium-slot:hover{transform:translateY(-6px)}
+.podium-block{border-radius:8px 8px 0 0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:16px 20px 14px;width:clamp(120px,25vw,200px);position:relative;overflow:hidden}
+.podium-block::before{content:"";position:absolute;inset:0;opacity:.08;background:linear-gradient(180deg,currentColor 0%,transparent 100%)}
+.podium-crown{font-size:28px;margin-bottom:6px;filter:drop-shadow(0 0 8px currentColor)}
+.podium-rank{font-family:"Press Start 2P",monospace;font-size:clamp(20px,4vw,36px);margin-bottom:4px}
+.podium-name{font-family:"Press Start 2P",monospace;font-size:clamp(8px,1.6vw,12px);word-break:break-all;margin-bottom:6px;max-width:100%}
+.podium-score{font-family:"Press Start 2P",monospace;font-size:clamp(12px,2.5vw,18px);margin-bottom:4px}
+.podium-room{font-size:10px;opacity:.7}
+
+.podium-1 .podium-block{height:180px;border:2px solid var(--gold);border-bottom:none;color:var(--gold);background:linear-gradient(180deg,rgba(255,215,0,.05),rgba(255,215,0,.02))}
+.podium-1 .podium-crown{color:var(--gold)}
+.podium-1 .podium-rank{color:var(--gold);text-shadow:0 0 16px rgba(255,215,0,.5)}
+.podium-1 .podium-name{color:var(--gold)}
+.podium-1 .podium-score{color:var(--yel)}
+
+.podium-2 .podium-block{height:140px;border:2px solid var(--silver);border-bottom:none;color:var(--silver);background:linear-gradient(180deg,rgba(192,192,192,.05),rgba(192,192,192,.02))}
+.podium-2 .podium-crown{color:var(--silver)}
+.podium-2 .podium-rank{color:var(--silver);text-shadow:0 0 12px rgba(192,192,192,.4)}
+.podium-2 .podium-name{color:var(--silver)}
+.podium-2 .podium-score{color:var(--silver)}
+
+.podium-3 .podium-block{height:110px;border:2px solid var(--bronze);border-bottom:none;color:var(--bronze);background:linear-gradient(180deg,rgba(205,127,50,.05),rgba(205,127,50,.02))}
+.podium-3 .podium-crown{color:var(--bronze)}
+.podium-3 .podium-rank{color:var(--bronze);text-shadow:0 0 10px rgba(205,127,50,.4)}
+.podium-3 .podium-name{color:var(--bronze)}
+.podium-3 .podium-score{color:var(--bronze)}
+
+.podium-empty .podium-block{border-color:var(--border);color:var(--ink-dim)}
+.podium-empty .podium-name{color:var(--ink-dim)}
+
+/* ─── Leaderboard List ─── */
+.lb-panel{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.lb-header{background:var(--surface);padding:12px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.lb-header-title{font-family:"Press Start 2P",monospace;font-size:11px;color:var(--red);display:flex;align-items:center;gap:8px}
+.lb-header-title::before{content:"◉";color:var(--cyan);font-size:14px}
+.lb-count{font-size:10px;color:var(--ink-dim)}
+
+.lb-row{display:grid;grid-template-columns:50px 1fr 120px 100px 80px;padding:12px 18px;border-bottom:1px solid rgba(255,26,26,.06);align-items:center;transition:all .4s ease;position:relative;overflow:hidden}
+.lb-row:hover{background:rgba(255,26,26,.04)}
+.lb-row.rank-up{animation:rankUp .6s ease}
+.lb-row.new-entry{animation:newEntry .8s ease}
+@keyframes rankUp{0%{background:rgba(0,255,106,.1);transform:translateX(-10px)}100%{background:transparent;transform:none}}
+@keyframes newEntry{0%{opacity:0;transform:translateY(20px)}100%{opacity:1;transform:none}}
+
+.lb-rank{font-family:"Press Start 2P",monospace;font-size:16px;text-align:center}
+.lb-rank.r1{color:var(--gold);text-shadow:0 0 10px rgba(255,215,0,.4)}
+.lb-rank.r2{color:var(--silver);text-shadow:0 0 8px rgba(192,192,192,.3)}
+.lb-rank.r3{color:var(--bronze);text-shadow:0 0 8px rgba(205,127,50,.3)}
+.lb-rank.rn{color:var(--ink-dim)}
+
+.lb-team{display:flex;flex-direction:column;gap:2px}
+.lb-team-name{font-family:"Press Start 2P",monospace;font-size:12px;color:var(--yel)}
+.lb-team-members{font-size:10px;color:var(--ink-dim)}
+
+.lb-score{font-family:"Press Start 2P",monospace;font-size:16px;color:var(--green);text-align:right;text-shadow:0 0 10px rgba(0,255,106,.25)}
+
+.lb-progress{display:flex;flex-direction:column;align-items:center;gap:2px}
+.lb-room{font-family:"Press Start 2P",monospace;font-size:11px;color:var(--cyan)}
+.progress-bar{width:80px;height:6px;background:var(--surface);border:1px solid var(--border);border-radius:3px;overflow:hidden}
+.progress-fill{height:100%;border-radius:2px;transition:width .8s cubic-bezier(.4,0,.2,1);position:relative}
+.progress-fill::after{content:"";position:absolute;right:0;top:0;bottom:0;width:6px;background:inherit;filter:brightness(1.5);animation:progressGlow 1.5s ease infinite}
+@keyframes progressGlow{0%,100%{opacity:1}50%{opacity:.4}}
+
+.lb-members-count{font-size:12px;color:var(--ink-dim);text-align:center}
+
+/* ─── Score bar ─── */
+.score-bar{width:100%;height:4px;background:rgba(255,26,26,.1);border-radius:2px;margin-top:4px;overflow:hidden}
+.score-bar-fill{height:100%;background:linear-gradient(90deg,var(--red),var(--yel));border-radius:2px;transition:width .8s cubic-bezier(.4,0,.2,1)}
+
+/* ─── Empty State ─── */
+.empty-state{text-align:center;padding:60px 20px;color:var(--ink-dim)}
+.empty-state .icon{font-size:48px;margin-bottom:16px;filter:grayscale(50%)}
+.empty-state p{font-size:12px;line-height:2}
+
+/* ─── Footer ─── */
+.sb-footer{text-align:center;padding:30px 20px;font-size:10px;color:var(--ink-dim);letter-spacing:1px}
+
+/* ─── Responsive ─── */
+@media(max-width:700px){
+.podium{gap:8px}
+.podium-block{padding:10px;width:clamp(90px,28vw,160px)}
+.lb-row{grid-template-columns:36px 1fr 80px 70px 50px;padding:10px 12px;font-size:12px}
+.lb-score{font-size:13px}
+.lb-rank{font-size:13px}
+.lb-team-name{font-size:10px}
+}
+@media(max-width:480px){
+.lb-row{grid-template-columns:30px 1fr 60px 50px;padding:8px 10px}
+.lb-members-count{display:none}
+.podium{flex-direction:column;align-items:center}
+.podium-block{width:80%;height:auto!important;padding:12px;border-radius:8px;border:2px solid currentColor!important}
+.podium-slot{order:0}
+.podium-1{order:-1}
+}
+
+/* ─── Matrix BG ─── */
+.matrix-bg{position:fixed;inset:0;z-index:-1;opacity:.03}
+
+/* ─── Particles ─── */
+.particles{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
+.particle{position:absolute;width:2px;height:2px;background:var(--red);border-radius:50%;animation:float linear infinite;opacity:0}
+@keyframes float{0%{opacity:0;transform:translateY(100vh)}10%{opacity:.6}90%{opacity:.6}100%{opacity:0;transform:translateY(-20px)}}
+</style></head>
+<body>
+
+<canvas class="matrix-bg" id="matrix-bg"></canvas>
+<div class="particles" id="particles"></div>
+<div class="top-bar"></div>
+
+<header class="sb-header">
+    <div class="sb-title">NIGHTJAR <span>SCOREBOARD</span></div>
+    <div class="sb-subtitle">SPECTRE NIGHTJAR RESPONSE CELL — LIVE RANKINGS</div>
+    <div class="sb-live"><div class="live-dot"></div>LIVE</div>
+    <div class="sb-clock" id="clock">00:00:00</div>
+    <a href="/hub" class="back-btn" style="position:absolute;top:20px;left:20px;padding:8px 16px;background:var(--card);border:1px solid var(--border);color:var(--ink-dim);font-family:inherit;font-size:10px;text-decoration:none;border-radius:4px;display:flex;align-items:center;gap:6px;transition:all 0.2s;">
+        <span style="color:var(--red)">◄</span> BACK TO HUB
+    </a>
+</header>
+
+<div class="sb-container">
+    <!-- Podium (Hidden per request) -->
+    <div class="podium" id="podium" style="display:none"></div>
+
+    <!-- Full Leaderboard -->
+    <div class="lb-panel" id="lb-panel">
+        <div class="lb-header">
+            <div class="lb-header-title">ALL TEAMS</div>
+            <div class="lb-count" id="lb-count">0 teams</div>
+        </div>
+        <div id="lb-body">
+            <div class="empty-state">
+                <div class="icon">◉</div>
+                <p>Awaiting team registrations...<br>Scoreboard will populate automatically.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer class="sb-footer">
+    SPECTRE NIGHTJAR // MERAZ FESTIVAL — AUTO-REFRESH EVERY 8 SECONDS
+</footer>
+
+<script>
+// ─── Matrix background ───
+(function(){
+const c=document.getElementById('matrix-bg'),x=c.getContext('2d');
+const G='01ABCDEF<>/{}$#%';
+let drops=[];
+function resize(){c.width=window.innerWidth;c.height=window.innerHeight;drops=Array.from({length:Math.ceil(c.width/16)},()=>Math.random()*-60)}
+function draw(){x.fillStyle='rgba(6,0,8,.05)';x.fillRect(0,0,c.width,c.height);x.font='16px monospace';
+drops.forEach((y,i)=>{x.fillStyle=Math.random()<.06?'#ffe600':'#ff1a1a';x.fillText(G[Math.random()*G.length|0],i*16,y*16);drops[i]=y*16>c.height&&Math.random()>.97?0:y+1});requestAnimationFrame(draw)}
+resize();draw();window.addEventListener('resize',resize)})();
+
+// ─── Floating particles ───
+(function(){
+const container=document.getElementById('particles');
+for(let i=0;i<30;i++){
+    const p=document.createElement('div');
+    p.className='particle';
+    p.style.left=Math.random()*100+'%';
+    p.style.animationDuration=(8+Math.random()*15)+'s';
+    p.style.animationDelay=(-Math.random()*20)+'s';
+    p.style.width=p.style.height=(1+Math.random()*2)+'px';
+    p.style.background=['#ff1a1a','#ffe600','#00f0ff','#00ff6a'][Math.random()*4|0];
+    container.appendChild(p);}})();
+
+// ─── Clock ───
+function updateClock(){
+    const now=new Date();
+    document.getElementById('clock').textContent=
+        String(now.getHours()).padStart(2,'0')+':'+
+        String(now.getMinutes()).padStart(2,'0')+':'+
+        String(now.getSeconds()).padStart(2,'0');
+}
+setInterval(updateClock,1000);
+updateClock();
+
+// ─── Data ───
+let prevTeams=[];
+let maxScore=100;
+
+async function loadScoreboard(){
+    try{
+        const res=await fetch('/api/scoreboard');
+        const teams=await res.json();
+        maxScore=Math.max(100,...teams.map(t=>t.score));
+        renderPodium(teams.slice(0,3));
+        renderLeaderboard(teams);
+        prevTeams=teams;
+    }catch(e){
+        console.error('Scoreboard fetch error:',e);
+    }
+}
+
+// ─── Podium ───
+function renderPodium(top3){
+    const podium=document.getElementById('podium');
+    // Display order: 2nd, 1st, 3rd
+    const order=[1,0,2];
+    const crowns=['','👑','🥈','🥉'];
+    const labels=['1ST','2ND','3RD'];
+    
+    podium.innerHTML=order.map(i=>{
+        const t=top3[i];
+        const cls=t?`podium-${i+1}`:'podium-empty';
+        return `<div class="podium-slot ${cls}">
+            <div class="podium-block">
+                ${t?`
+                    <div class="podium-crown">${crowns[i+1]||''}</div>
+                    <div class="podium-rank">${labels[i]}</div>
+                    <div class="podium-name">${t.name}</div>
+                    <div class="podium-score">${t.score} PTS</div>
+                    <div class="podium-room">ROOM ${t.current_room}/10</div>
+                `:`
+                    <div class="podium-rank" style="color:var(--ink-dim)">${labels[i]}</div>
+                    <div class="podium-name">—</div>
+                `}
+            </div>
+        </div>`;
+    }).join('');
+}
+
+// ─── Leaderboard ───
+function renderLeaderboard(teams){
+    const body=document.getElementById('lb-body');
+    document.getElementById('lb-count').textContent=teams.length+' team'+(teams.length!==1?'s':'');
+    
+    if(!teams.length){
+        body.innerHTML=`<div class="empty-state"><div class="icon">◉</div><p>Awaiting team registrations...<br>Scoreboard will populate automatically.</p></div>`;
+        return;
+    }
+    
+    const prevMap={};
+    prevTeams.forEach((t,i)=>prevMap[t.id]=i+1);
+    
+    body.innerHTML=teams.map((t,i)=>{
+        const rank=i+1;
+        const prevRank=prevMap[t.id];
+        const isNew=prevRank===undefined;
+        const movedUp=prevRank!==undefined&&prevRank>rank;
+        const rankCls=rank<=3?'r'+rank:'rn';
+        const prog=(t.current_room/10*100);
+        const scorePct=maxScore>0?Math.min(100,t.score/maxScore*100):0;
+        
+        // Progress bar color based on progress
+        const progColor=prog>70?'var(--green)':prog>40?'var(--yel)':'var(--red)';
+        
+        let animCls='';
+        if(isNew)animCls='new-entry';
+        else if(movedUp)animCls='rank-up';
+        
+        return `<div class="lb-row ${animCls}">
+            <div class="lb-rank ${rankCls}">${rank}</div>
+            <div class="lb-team">
+                <div class="lb-team-name">${t.name}</div>
+                <div class="score-bar"><div class="score-bar-fill" style="width:${scorePct}%"></div></div>
+            </div>
+            <div class="lb-score">${t.score}</div>
+            <div class="lb-progress">
+                <div class="lb-room">R${t.current_room}</div>
+                <div class="progress-bar"><div class="progress-fill" style="width:${prog}%;background:${progColor}"></div></div>
+            </div>
+            <div class="lb-members-count">${t.members} ☻</div>
+        </div>`;
+    }).join('');
+}
+
+// ─── Init + auto-refresh ───
+loadScoreboard();
+setInterval(loadScoreboard,8000);
+</script>
+</body></html>
