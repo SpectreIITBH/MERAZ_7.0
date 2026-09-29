@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NIGHTJAR — Hub World</title>
+<meta name="description" content="SPECTRE NIGHTJAR Hub — Cybersecurity escape room command center">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=JetBrains+Mono:wght@400;700&display=swap">
+<style>
+/* ─── Reset & Variables ─── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+--bg:#060008;--surface:#0c0014;--card:#0f0018;--card-hover:#140020;
+--red:#ff1a1a;--red-dim:#5a0a0a;--red-glow:rgba(255,26,26,.25);
+--yel:#ffe600;--yel-dim:#a09200;
+--cyan:#00f0ff;--cyan-dim:#005a60;
+--ink:#ffd9d9;--ink-dim:#8a6a6a;
+--green:#00ff6a;--green-dim:#005a28;
+--border:rgba(255,26,26,.2);--radius:6px;
+--nav-h:52px;--sidebar-w:240px;--panel-w:260px;
+}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--ink);font-family:"JetBrains Mono","Courier New",monospace;font-size:12px;line-height:1.5}
+
+/* ─── CRT Overlay ─── */
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:9999;background:repeating-linear-gradient(0deg,rgba(0,0,0,.1) 0 1px,transparent 1px 3px);opacity:.5}
+
+/* ─── Top Navigation ─── */
+.nav{position:fixed;top:0;left:0;right:0;height:var(--nav-h);z-index:100;background:rgba(6,0,8,.94);backdrop-filter:blur(16px);border-bottom:2px solid var(--red);display:flex;align-items:center;padding:0 16px;gap:12px}
+.nav-brand{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.nav-brand h1{font-family:"Press Start 2P",monospace;font-size:11px;color:var(--red);text-shadow:0 0 12px rgba(255,26,26,.5);letter-spacing:1px;white-space:nowrap}
+.nav-brand h1 span{color:var(--yel)}
+.nav-sep{width:1px;height:28px;background:var(--border);flex-shrink:0}
+.nav-links{display:flex;gap:4px;flex-shrink:0}
+.nav-link{font-family:inherit;font-size:10px;padding:6px 12px;border:1px solid var(--border);border-radius:var(--radius);background:transparent;color:var(--ink-dim);cursor:pointer;transition:all .2s;text-decoration:none;white-space:nowrap;display:flex;align-items:center;gap:5px}
+.nav-link:hover{border-color:var(--cyan);color:var(--cyan);background:rgba(0,240,255,.05);box-shadow:0 0 12px rgba(0,240,255,.1)}
+.nav-link.active{border-color:var(--red);color:var(--red);background:rgba(255,26,26,.08)}
+.nav-link.admin-link{border-color:var(--yel-dim);color:var(--yel)}
+.nav-link.admin-link:hover{border-color:var(--yel);background:rgba(255,230,0,.06);box-shadow:0 0 12px rgba(255,230,0,.1)}
+.nav-spacer{flex:1}
+.nav-user{display:flex;align-items:center;gap:8px;font-size:10px;color:var(--ink-dim)}
+.nav-user-name{color:var(--yel);font-weight:700}
+.nav-user-team{color:var(--cyan);font-size:9px}
+.nav-status{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.nav-timer{font-family:"Press Start 2P",monospace;font-size:10px;color:var(--red);text-shadow:0 0 8px rgba(255,26,26,.4);white-space:nowrap}
+.nav-timer small{color:var(--red-dim);font-size:8px;margin-left:4px}
+
+/* ─── Main Layout ─── */
+.app{display:flex;height:calc(100vh - var(--nav-h));margin-top:var(--nav-h)}
+
+/* ─── Left Sidebar: Room Tracker ─── */
+.sidebar{width:var(--sidebar-w);flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.sidebar-header{padding:12px 14px;border-bottom:1px solid var(--border);font-family:"Press Start 2P",monospace;font-size:9px;color:var(--red);display:flex;align-items:center;gap:6px}
+.sidebar-header::before{content:"◉";color:var(--cyan);font-size:12px}
+.sidebar-progress{padding:10px 14px;border-bottom:1px solid var(--border)}
+.progress-label{font-size:9px;color:var(--ink-dim);margin-bottom:6px;display:flex;justify-content:space-between}
+.progress-bar{height:6px;background:rgba(255,26,26,.1);border-radius:3px;overflow:hidden;border:1px solid var(--border)}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--red),var(--yel));border-radius:2px;transition:width .6s cubic-bezier(.4,0,.2,1)}
+.room-list{flex:1;overflow-y:auto;padding:6px 0;scrollbar-width:thin;scrollbar-color:var(--red-dim) transparent}
+.room-item{display:flex;align-items:center;gap:10px;padding:8px 14px;cursor:pointer;transition:all .15s;border-left:3px solid transparent;position:relative}
+.room-item:hover{background:rgba(255,26,26,.04);border-left-color:var(--red-dim)}
+.room-item.visited{border-left-color:var(--yel)}
+.room-item.visited .room-status{background:var(--yel);box-shadow:0 0 6px rgba(255,230,0,.4)}
+.room-item.current{background:rgba(255,26,26,.08);border-left-color:var(--red)}
+.room-item.current .room-status{background:var(--red);box-shadow:0 0 8px var(--red-glow);animation:pulse 1.5s infinite}
+.room-status{width:8px;height:8px;border-radius:50%;background:var(--red-dim);flex-shrink:0;transition:all .3s}
+.room-info{flex:1;min-width:0}
+.room-number{font-family:"Press Start 2P",monospace;font-size:8px;color:var(--ink-dim)}
+.room-item.visited .room-number{color:var(--yel)}
+.room-name{font-size:10px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.room-domain{font-size:8px;color:var(--cyan-dim);margin-top:1px}
+.room-item.visited .room-domain{color:var(--cyan)}
+
+/* ─── NPC Sidebar ─── */
+.sidebar-npcs{border-top:1px solid var(--border);padding:6px 0}
+.npc-header{padding:6px 14px;font-family:"Press Start 2P",monospace;font-size:8px;color:var(--red);display:flex;align-items:center;gap:5px}
+.npc-header::before{content:"▸";color:var(--yel)}
+.npc-item{display:flex;align-items:center;gap:8px;padding:6px 14px;font-size:10px;cursor:default}
+.npc-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.npc-name{color:var(--ink-dim)}
+.npc-item.briefed .npc-name{color:var(--yel)}
+.npc-item.briefed .npc-dot{box-shadow:0 0 6px currentColor}
+
+/* ─── Center: Game Area ─── */
+.game-area{flex:1;display:flex;flex-direction:column;min-width:0;position:relative;background:#000}
+.game-canvas-wrap{flex:1;position:relative;overflow:hidden}
+#stage{position:absolute;inset:0;container-type:inline-size;background:#000;overflow:hidden}
+canvas{width:100%;height:100%;display:block;image-rendering:pixelated}
+
+/* Controls bar below canvas */
+.controls-bar{background:var(--surface);border-top:1px solid var(--border);padding:8px 12px;display:flex;align-items:center;justify-content:center;gap:6px;flex-shrink:0}
+.k{width:32px;height:32px;border:1px solid var(--red-dim);display:flex;align-items:center;justify-content:center;color:var(--red);font-size:10px;font-style:normal;background:rgba(28,0,0,.6);user-select:none;touch-action:none;cursor:pointer;border-radius:4px;transition:all .1s;font-family:"Press Start 2P",monospace}
+.k:hover{border-color:var(--red);background:rgba(255,26,26,.08)}
+.k.on{background:var(--yel);color:#000;border-color:var(--yel);box-shadow:0 0 8px rgba(255,230,0,.3)}
+.ctrl-label{font-size:8px;color:var(--ink-dim);margin:0 4px}
+
+/* ─── Right Panel: Intel Feed ─── */
+.panel{width:var(--panel-w);flex-shrink:0;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.panel-section{border-bottom:1px solid var(--border)}
+.panel-header{padding:10px 14px;font-family:"Press Start 2P",monospace;font-size:8px;color:var(--red);display:flex;align-items:center;gap:5px;border-bottom:1px solid rgba(255,26,26,.08)}
+.panel-header::before{content:"◉"}
+.panel-header .count{color:var(--ink-dim);font-family:"JetBrains Mono",monospace;font-size:9px;margin-left:auto}
+
+/* Team Info */
+.team-info{padding:12px 14px}
+.team-name-display{font-family:"Press Start 2P",monospace;font-size:10px;color:var(--yel);margin-bottom:8px;text-shadow:0 0 8px rgba(255,230,0,.2)}
+.team-stat{display:flex;justify-content:space-between;padding:4px 0;font-size:10px}
+.team-stat-label{color:var(--ink-dim)}
+.team-stat-val{color:var(--cyan);font-weight:700}
+
+/* Intel Feed (NPC dialog log) */
+.intel-feed{flex:1;overflow-y:auto;padding:6px 0;scrollbar-width:thin;scrollbar-color:var(--red-dim) transparent}
+.intel-entry{padding:8px 14px;border-bottom:1px solid rgba(255,26,26,.05);animation:feedIn .3s ease}
+@keyframes feedIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.intel-source{font-family:"Press Start 2P",monospace;font-size:7px;color:var(--yel);margin-bottom:4px;display:flex;align-items:center;gap:4px}
+.intel-source::before{content:"▸";color:var(--red)}
+.intel-text{font-size:10px;color:var(--ink);line-height:1.6}
+.intel-time{font-size:8px;color:var(--ink-dim);margin-top:3px}
+.intel-empty{padding:20px 14px;text-align:center;color:var(--ink-dim);font-size:10px;line-height:1.8}
+
+/* ─── In-canvas HUD elements ─── */
+#hud{position:absolute;left:0;top:0;padding:1.4cqw 2cqw 1.6cqw 1.6cqw;background:rgba(0,0,0,.72);clip-path:polygon(0 0,100% 0,90% 100%,0 100%);display:flex;flex-direction:column;gap:.9cqw;max-width:60%}
+#h1{color:var(--red);font-size:max(9px,2.2cqw);text-shadow:.2cqw .2cqw 0 #500;font-family:"Press Start 2P",monospace}
+#h2{color:var(--yel);font-size:max(6px,1.1cqw);line-height:1.5;font-family:"Press Start 2P",monospace}
+#h3{color:#c66;font-size:max(5px,.9cqw);font-family:"Press Start 2P",monospace}
+#clk{position:absolute;right:1.4cqw;top:1.2cqw;color:var(--red);font-size:max(8px,1.5cqw);text-align:right;line-height:1.6;font-family:"Press Start 2P",monospace}
+#clk small{display:block;color:#a44;font-size:max(5px,.85cqw)}
+#prompt{position:absolute;left:50%;bottom:3cqw;transform:translateX(-50%);background:#000;border:2px solid var(--yel);color:var(--yel);padding:.8cqw 1.4cqw;font-size:max(6px,1.2cqw);white-space:nowrap;font-family:"Press Start 2P",monospace}
+#dlg{position:absolute;left:50%;bottom:2.5cqw;transform:translateX(-50%);width:68%;background:#0a0000;border:3px solid var(--red);box-shadow:.5cqw .5cqw 0 #400;padding:1.6cqw;font-size:max(6px,1.2cqw);line-height:1.8;font-family:"Press Start 2P",monospace}
+#dlg b{display:block;color:var(--yel);font-size:max(7px,1.5cqw);margin-bottom:.8cqw;font-weight:400}
+#dlg i{display:block;margin-top:.8cqw;color:#c66;font-style:normal;font-size:max(5px,.9cqw)}
+[hidden]{display:none!important}
+#stage[data-m=room] :is(#hud,#clk,#prompt,#dlg,.lb),#stage[data-m=boot] :is(#hud,#clk,#prompt,#dlg,.lb,#rn){display:none}
+#stage[data-m=hub] #rn{display:none}
+.lb{position:absolute;left:0;top:0;pointer-events:none;text-align:center;white-space:nowrap;font-size:max(7px,1cqw);line-height:1.7;color:#ffd9d9;text-shadow:0 0 3px #000,0 0 6px #000,1px 1px 0 #000,-1px -1px 0 #000;will-change:transform;-webkit-font-smoothing:antialiased;font-family:"Press Start 2P",monospace}
+.lb em{display:block;font-style:normal;color:#ff6a6a}
+.lb.v,.lb.v em{color:var(--yel)}
+#rn{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--yel);font-size:6cqw;background:#000;font-family:"Press Start 2P",monospace}
+.npc-lb{position:absolute;left:0;top:0;pointer-events:none;text-align:center;white-space:nowrap;font-size:max(6px,.85cqw);color:#ffd9d9;will-change:transform;-webkit-font-smoothing:antialiased;font-family:"Press Start 2P",monospace}
+
+/* ─── Boot Sequence ─── */
+#boot{position:absolute;inset:0;background:#050000;cursor:pointer;overflow:hidden;z-index:10}
+#mx{position:absolute;inset:0;opacity:.55}
+#lg{position:absolute;left:3cqw;top:3cqw;margin:0;font-family:"Press Start 2P",monospace;font-size:max(6px,1.2cqw);line-height:1.9;color:#ffb0b0;text-shadow:0 0 .6cqw #f00;white-space:pre}
+#lg .w{color:var(--yel)}#lg .f{color:var(--red)}
+#barw{position:absolute;left:3cqw;right:3cqw;bottom:3cqw;height:1.6cqw;border:2px solid var(--red)}
+#barw i{display:block;height:100%;width:0;background:repeating-linear-gradient(90deg,var(--red) 0 .8cqw,#300 .8cqw 1cqw);transition:width .25s steps(4)}
+#warn{position:absolute;left:0;right:0;top:32%;margin:0;text-align:center;font-weight:400;font-size:4.6cqw;line-height:1.6;color:var(--red);text-shadow:0 0 1.5cqw #f00,.4cqw .4cqw 0 #600;padding:0 4cqw;font-family:"Press Start 2P",monospace}
+#warn::before,#warn::after{content:attr(data-t);position:absolute;left:0;right:0;top:0;padding:0 4cqw}
+#warn::before{color:#3cf;clip-path:inset(0 0 55% 0);transform:translateX(-.6cqw);mix-blend-mode:screen}
+#warn::after{color:var(--yel);clip-path:inset(55% 0 0 0);transform:translateX(.6cqw);mix-blend-mode:screen}
+#sub{position:absolute;left:0;right:0;top:62%;margin:0;text-align:center;font-size:max(6px,1.3cqw);line-height:1.9;color:var(--ink);padding:0 6cqw;font-family:"Press Start 2P",monospace}
+#press{position:absolute;left:0;right:0;bottom:5cqw;margin:0;text-align:center;font-size:max(7px,1.5cqw);color:var(--yel);font-family:"Press Start 2P",monospace}
+#flash{position:absolute;inset:0;background:var(--red);opacity:0;pointer-events:none}
+#boot::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(0,0,0,.28) 0 2px,transparent 2px 4px);pointer-events:none}
+@media(prefers-reduced-motion:no-preference){
+.shake{animation:sk .09s steps(2) infinite}
+@keyframes sk{0%{transform:translate(-1.2%,.6%)}25%{transform:translate(1%,-.8%)}50%{transform:translate(-.6%,-1%)}75%{transform:translate(1.2%,.8%)}100%{transform:translate(0,0)}}
+#flash.on{animation:fl .5s steps(4)}
+@keyframes fl{0%{opacity:.85}30%{opacity:0}55%{opacity:.6}100%{opacity:0}}
+#warn.g{animation:gl .3s steps(2) infinite}
+@keyframes gl{50%{transform:translate(.3%,-.6%) skewX(3deg)}}
+.go{animation:b 1s steps(2) infinite}@keyframes b{50%{opacity:.25}}}
+
+/* ─── Responsive ─── */
+@media(max-width:1100px){
+:root{--panel-w:0px}
+.panel{display:none}
+}
+@media(max-width:800px){
+:root{--sidebar-w:0px}
+.sidebar{display:none}
+.controls-bar{padding:6px 8px}
+}
+@media(max-width:500px){
+.nav-links{display:none}
+.nav-timer small{display:none}
+.k{width:28px;height:28px;font-size:9px}
+}
+</style></head>
+<body>
+
+<!-- ═══ Top Navigation ═══ -->
+<nav class="nav" id="top-nav">
+    <div class="nav-brand">
+        <h1>NIGHTJAR <span>HUB</span></h1>
+    </div>
+    <div class="nav-sep"></div>
+    <div class="nav-links">
+        <a href="/hub" class="nav-link active">◈ HUB</a>
+        <a href="/scoreboard" class="nav-link">◉ SCOREBOARD</a>
+        <a href="/admin" class="nav-link admin-link" id="admin-nav-link" style="display:none">★ ADMIN</a>
+    </div>
+    <div class="nav-spacer"></div>
+    <div class="nav-timer" id="nav-timer">23:17:00<small>NEXUS OFFLINE</small></div>
+    <div class="nav-sep"></div>
+    <div class="nav-user">
+        <div class="nav-status"></div>
+        <span class="nav-user-name" id="nav-username">OPERATIVE</span>
+        <span class="nav-user-team" id="nav-team"></span>
+    </div>
+    <button class="nav-link" onclick="logout()" style="border-color:var(--red-dim);color:var(--red)">⏻</button>
+</nav>
+
+<!-- ═══ Main App Layout ═══ -->
+<div class="app">
+
+    <!-- Left Sidebar: Room Tracker -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">MISSION ROOMS</div>
+        <div class="sidebar-progress">
+            <div class="progress-label">
+                <span>PROGRESS</span>
+                <span id="progress-text">0 / 10</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+            </div>
+        </div>
+        <div class="room-list" id="room-list"></div>
+        <div class="sidebar-npcs" id="npc-tracker">
+            <div class="npc-header">ALLIES</div>
+        </div>
+    </aside>
+
+    <!-- Center: Game Canvas -->
+    <main class="game-area">
+        <div class="game-canvas-wrap">
+            <div id="stage" data-m="boot">
+                <canvas id="c" width="480" height="270"></canvas>
+                <div id="rn"></div>
+                <div id="hud"><b id="h1"></b><span id="h2"></span><span id="h3"></span></div>
+                <div id="clk"></div>
+                <div id="prompt" hidden></div>
+                <div id="dlg" hidden></div>
+                <div id="boot">
+                    <canvas id="mx"></canvas>
+                    <pre id="lg"></pre>
+                    <div id="barw"><i></i></div>
+                    <h1 id="warn" data-t="" hidden></h1>
+                    <p id="sub" hidden>SPECTRE NIGHTJAR RESPONSE CELL: DEPLOY TO THE HUB. TRACE THE WORM.</p>
+                    <p id="press" class="go" hidden>PRESS ANY KEY TO JACK IN</p>
+                    <div id="flash"></div>
+                </div>
+            </div>
+        </div>
+        <div class="controls-bar" id="controls-bar">
+            <i class="k" data-k="A">A</i>
+            <i class="k" data-k="W">W</i>
+            <i class="k" data-k="S">S</i>
+            <i class="k" data-k="D">D</i>
+            <span class="ctrl-label">MOVE</span>
+            <i class="k" data-k="E">E</i>
+            <span class="ctrl-label">INTERACT</span>
+            <i class="k" data-k="ESC" style="width:auto;padding:0 8px;font-size:8px">ESC</i>
+            <span class="ctrl-label">BACK</span>
+        </div>
+    </main>
+
+    <!-- Right Panel: Intel Feed -->
+    <aside class="panel" id="right-panel">
+        <div class="panel-section">
+            <div class="panel-header">TEAM STATUS</div>
+            <div class="team-info">
+                <div class="team-name-display" id="team-display">—</div>
+                <div class="team-stat">
+                    <span class="team-stat-label">SCORE</span>
+                    <span class="team-stat-val" id="team-score">0</span>
+                </div>
+                <div class="team-stat">
+                    <span class="team-stat-label">ROOMS</span>
+                    <span class="team-stat-val" id="team-rooms">0 / 10</span>
+                </div>
+                <div class="team-stat">
+                    <span class="team-stat-label">ALLIES</span>
+                    <span class="team-stat-val" id="team-allies">0 / 3</span>
+                </div>
+            </div>
+        </div>
+        <div class="panel-header">INTEL FEED <span class="count" id="intel-count">0</span></div>
+        <div class="intel-feed" id="intel-feed">
+            <div class="intel-empty">
+                Talk to allies and explore rooms<br>to gather intelligence.
+            </div>
+        </div>
+    </aside>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   NAV: User info + admin link visibility
+   ═══════════════════════════════════════════════════════ */
+(async function loadUser(){
+    try{
+        const r=await fetch('/api/me');
+        if(!r.ok)return;
+        const u=await r.json();
+        document.getElementById('nav-username').textContent=u.username.toUpperCase();
+        if(u.team){
+            document.getElementById('nav-team').textContent='['+u.team+']';
+            document.getElementById('team-display').textContent=u.team;
+        }
+        if(u.is_admin) document.getElementById('admin-nav-link').style.display='';
+    }catch(e){}
+})();
+
+async function logout(){
+    try{await fetch('/api/logout',{method:'POST'})}catch(e){}
+    window.location.href='/';
+}
+
+/* ═══════════════════════════════════════════════════════
+   SIDEBAR: Build room list + NPC tracker
+   ═══════════════════════════════════════════════════════ */
+const ROOMS=[
+    ['The Empty Signal','OSINT'],['The Dead Telegram','Cryptography'],
+    ['The Intercept','Packet Analysis'],['The Quiet Machine','Linux'],
+    ['The Broken Gate','Web Security'],['The Living Ledger','Databases'],
+    ['The False Victim','Identity'],['The Ghost in the Machine','Malware'],
+    ['The Last Timestamp','Forensics'],['Patient Zero Is a System','Final Case']
+];
+const NPC_INFO=[
+    {name:'Cmdr. Ila Sen',short:'Ila',color:'#9a9aa8'},
+    {name:'Rhea D\'Souza',short:'Rhea',color:'#ff6a6a'},
+    {name:'Kabir "Kite" Mehra',short:'Kabir',color:'#e0a884'}
+];
+
+// Build room items in sidebar
+const roomListEl=document.getElementById('room-list');
+ROOMS.forEach((r,i)=>{
+    const el=document.createElement('div');
+    el.className='room-item';
+    el.id='sidebar-room-'+i;
+    el.innerHTML=`
+        <div class="room-status"></div>
+        <div class="room-info">
+            <div class="room-number">ROOM ${i+1}</div>
+            <div class="room-name">${r[0]}</div>
+            <div class="room-domain">${r[1]}</div>
+        </div>`;
+    roomListEl.appendChild(el);
+});
+
+// Build NPC items
+const npcTracker=document.getElementById('npc-tracker');
+NPC_INFO.forEach((n,i)=>{
+    const el=document.createElement('div');
+    el.className='npc-item';
+    el.id='sidebar-npc-'+i;
+    el.innerHTML=`<div class="npc-dot" style="background:${n.color}"></div><span class="npc-name">${n.short}</span>`;
+    npcTracker.appendChild(el);
+});
+
+// Sidebar update function (called from game loop)
+function updateSidebar(visitedArr, npcTalked){
+    const count=visitedArr.filter(Boolean).length;
+    document.getElementById('progress-text').textContent=count+' / 10';
+    document.getElementById('progress-fill').style.width=(count/10*100)+'%';
+    document.getElementById('team-rooms').textContent=count+' / 10';
+
+    visitedArr.forEach((v,i)=>{
+        const el=document.getElementById('sidebar-room-'+i);
+        el.classList.toggle('visited',!!v);
+    });
+
+    const alliesBriefed=npcTalked.filter(Boolean).length;
+    document.getElementById('team-allies').textContent=alliesBriefed+' / 3';
+    npcTalked.forEach((v,i)=>{
+        document.getElementById('sidebar-npc-'+i).classList.toggle('briefed',!!v);
+    });
+}
+
+function highlightCurrentRoom(roomIdx){
+    document.querySelectorAll('.room-item.current').forEach(e=>e.classList.remove('current'));
+    if(roomIdx>=0){
+        const el=document.getElementById('sidebar-room-'+roomIdx);
+        if(el){el.classList.add('current');el.scrollIntoView({block:'nearest',behavior:'smooth'})}
+    }
+}
+
+/* ═══════════════════════════════════════════════════════
+   INTEL FEED: Log NPC conversations
+   ═══════════════════════════════════════════════════════ */
+let intelCount=0;
+function addIntel(source, text){
+    const feed=document.getElementById('intel-feed');
+    // Remove empty state
+    const empty=feed.querySelector('.intel-empty');
+    if(empty)empty.remove();
+
+    const entry=document.createElement('div');
+    entry.className='intel-entry';
+    const now=new Date();
+    const ts=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+    entry.innerHTML=`
+        <div class="intel-source">${source}</div>
+        <div class="intel-text">${text}</div>
+        <div class="intel-time">${ts}</div>`;
+    feed.prepend(entry);
+    intelCount++;
+    document.getElementById('intel-count').textContent=intelCount;
+}
+
+/* ═══════════════════════════════════════════════════════
+   GAME ENGINE (preserved from original)
+   ═══════════════════════════════════════════════════════ */
+const $=id=>document.getElementById(id),C=$('c'),X=C.getContext('2d'),ST=$('stage');
+const W=480,H=270,WW=1120,WH=630,WALL=64;
+const R=[['The Empty Signal','OSINT'],['The Dead Telegram','Cryptography'],['The Intercept','Packet analysis'],['The Quiet Machine','Linux'],['The Broken Gate','Web security'],['The Living Ledger','Databases'],['The False Victim','Identity'],['The Ghost in the Machine','Malware'],['The Last Timestamp','Forensics'],['Patient Zero Is a System','Final case']];
+const NP=[
+{n:'Cmdr. Ila Sen',s:'Ila',P:{h:'#9a9aa8',s:'#d9a082',j:'#22222c',t:'#ffe600',l:'#111',e:'b'},L:['NEXUS went dark at 23:17. No breach alert, no attacker, no explanation.','Pick any door. Every room holds a piece of the same intrusion.','Follow the evidence. Do not follow the first name you find.']},
+{n:'Rhea D\'Souza',s:'Rhea',P:{h:'#2a1010',s:'#c98e6c',j:'#0d4a4a',t:'#ff1a1a',l:'#222',e:'g'},L:['I built NEXUS. It has a feature in it that I do not recognise.','The Curator does not lie, but the Curator does omit.','Verify what I tell you. Then verify it again.']},
+{n:'Kabir "Kite" Mehra',s:'Kabir',P:{h:'#3a2010',s:'#e0a884',j:'#b04a10',t:'#ffe600',l:'#1a1a3a',e:'c'},L:['Everyone thinks it was me. My login is in every log.','I only clicked one installer. It looked exactly like our sync tool!','If you find who really did this, please say it loudly.']}];
+const CM=['$ nmap -sV 10.0.7.1','> nexus --status','OFFLINE 23:17','$ tail -f auth.log','curator_404 seen','ssh: key accepted','GET /volunteer 200','$ ls /aether','MIRA/7 banner','0x4e4a5f 0x41','$ whoami','trust=inherit'];
+const D=[],sol=[],visited=Array(10).fill(0),NT=[0,0,0],K={};
+let mode='boot',ri=0,npcOpen=false,dlgT,cam={x:0,y:0};
+const p={x:WW/2,y:WH/2+60,f:1,mv:false};
+// random placement of 10 doors + 3 NPCs
+(function(){const pts=[[p.x,p.y]];const put=(d,y0)=>{for(let n=0;n<900;n++){const k=d*(1-n/1000),x=70+Math.random()*(WW-140),y=y0+Math.random()*(WH-y0-50);if(pts.every(q=>Math.hypot(q[0]-x,q[1]-y)>k)){pts.push([x,y]);return{x,y}}}return{x:100,y:y0}};
+for(let i=0;i<10;i++){const q=put(125,WALL+62);D.push({x:q.x,y:q.y,i});sol.push([q.x-18,q.y-8,36,10])}
+NP.forEach(n=>{const q=put(105,WALL+50);n.x=q.x;n.y=q.y;sol.push([q.x-6,q.y-6,12,8])})})();
+// decor
+const WN=[];for(let x=10,i=0;x<WW-60;i++){const w=70+(Math.random()*30|0);WN.push([x,w,i*7%CM.length]);x+=w+8}
+const FS=Array.from({length:60},()=>[80+(Math.random()*(WW-200)|0),WALL+20+(Math.random()*(WH-WALL-40)|0),CM[Math.random()*CM.length|0]]);
+const sl=(()=>{const c=document.createElement('canvas');c.width=1;c.height=3;const q=c.getContext('2d');q.fillStyle='rgba(0,0,0,.22)';q.fillRect(0,2,1,1);return X.createPattern(c,'repeat')})();
+
+// ===== breach boot sequence =====
+const mx=$('mx'),mc=mx.getContext('2d'),lg=$('lg'),bw=$('barw'),wr=$('warn'),bar=bw.firstElementChild,CS=12,GL='01ABCDEF<>/{}$#%';
+let drops=[],bp=0,tm=[],iv,gi;
+function sizeMx(){mx.width=ST.clientWidth;mx.height=ST.clientHeight;drops=Array.from({length:Math.ceil(mx.width/CS)},()=>Math.random()*-60)}
+function rain(){if(mode!='boot')return;mc.fillStyle='rgba(5,0,0,.13)';mc.fillRect(0,0,mx.width,mx.height);mc.font=CS+'px monospace';
+drops.forEach((y,i)=>{mc.fillStyle=Math.random()<.05?'#ffe600':'#ff1a1a';mc.fillText(GL[Math.random()*GL.length|0],i*CS,y*CS);drops[i]=y*CS>mx.height&&Math.random()>.96?0:y+1});requestAnimationFrame(rain)}
+const shake=ms=>{ST.classList.add('shake');setTimeout(()=>ST.classList.remove('shake'),ms)};
+const flash=()=>{const f=$('flash');f.classList.remove('on');void f.offsetWidth;f.classList.add('on')};
+const at=(ms,f)=>tm.push(setTimeout(f,ms));
+function decode(txt,ms,done){const t0=performance.now();iv=setInterval(()=>{const k=Math.min(1,(performance.now()-t0)/ms),n=Math.floor(k*txt.length);let o='';for(let i=0;i<txt.length;i++)o+=txt[i]==' '||i<n?txt[i]:GL[Math.random()*GL.length|0];wr.textContent=o;wr.dataset.t=o;if(k>=1){clearInterval(iv);done&&done()}},40)}
+const MSG='THE SHOW MUST NOT CONTINUE';
+const B=[[300,'MERAZ FESTIVAL // NEXUS v4.2  cold boot'],[350,'[ OK ] ticketing.core'],[250,'[ OK ] volunteer.roster'],[250,'[ OK ] artist.checkin'],[400,'[WARN] unsigned installer executed (k.mehra)','w'],[300,'[FAIL] identity.gateway','f'],[250,'[FAIL] payments.sync','f'],[300,'[WARN] unknown process MIRA-7  pid 1723','w'],[450,'23:17:00 >> WORM DETECTED','f'],[300,'CASCADE FAILURE: ALL SERVICES','f']];
+function bootRun(){sizeMx();rain();let t=200;
+B.forEach((b,i)=>{t+=b[0];at(t,()=>{lg.insertAdjacentHTML('beforeend','<span class="'+(b[2]||'')+'">'+b[1]+'\n</span>');bar.style.width=(i+1)/B.length*100+'%';if(i==4)shake(250);if(i==8){shake(700);flash()}})});
+at(t+800,()=>{bp=2;lg.hidden=bw.hidden=true;wr.hidden=false;wr.classList.add('g');shake(1400);flash();
+decode(MSG,1500,()=>at(500,()=>{$('sub').hidden=$('press').hidden=false;bp=3;shake(300)}));
+gi=setInterval(()=>{if(Math.random()<.4)shake(150)},1800)})}
+function bootKey(){
+    if(bp<3){
+        tm.forEach(clearTimeout);clearInterval(iv);
+        lg.hidden=bw.hidden=true;wr.hidden=$('sub').hidden=$('press').hidden=false;
+        wr.textContent=wr.dataset.t=MSG;wr.classList.add('g');bp=3;return
+    }
+    clearInterval(gi);$('boot').hidden=true;mode='hub';ST.dataset.m='hub';
+    localStorage.setItem('nj_boot_done','1');
+}
+
+if(localStorage.getItem('nj_boot_done')==='1'){
+    $('boot').hidden=true;mode='hub';ST.dataset.m='hub';bp=3;
+}
+
+// ===== input =====
+const map={KeyA:'l',ArrowLeft:'l',KeyD:'r',ArrowRight:'r',KeyW:'u',ArrowUp:'u',KeyS:'d',ArrowDown:'d'},kn={KeyW:'W',ArrowUp:'W',KeyA:'A',ArrowLeft:'A',KeyS:'S',ArrowDown:'S',KeyD:'D',ArrowRight:'D',KeyE:'E'};
+const cap=(n,on)=>document.querySelectorAll('.k[data-k="'+n+'"]').forEach(e=>e.classList.toggle('on',on));
+addEventListener('keydown',e=>{const m=map[e.code];if(m){K[m]=1;e.preventDefault()}if(kn[e.code])cap(kn[e.code],1);if(e.repeat)return;
+if(mode=='boot')return bootKey();
+if(e.code=='KeyE'||e.code=='Enter')interact();else if(e.code=='Escape')mode=='room'?leave():($('dlg').hidden=true)});
+addEventListener('keyup',e=>{const m=map[e.code];if(m)K[m]=0;if(kn[e.code])cap(kn[e.code],0)});
+const pk={W:'u',A:'l',S:'d',D:'r'};
+document.querySelectorAll('.k').forEach(el=>{const n=el.dataset.k;
+if(!pk[n]&&n!=='E'&&n!=='ESC')return;
+el.addEventListener('pointerdown',e=>{e.preventDefault();cap(n,1);if(pk[n])K[pk[n]]=1;else if(n==='E')interact();else if(n==='ESC'){mode=='room'?leave():($('dlg').hidden=true)}});
+['pointerup','pointerleave'].forEach(v=>el.addEventListener(v,()=>{cap(n,0);if(pk[n])K[pk[n]]=0}))});
+$('boot').addEventListener('pointerdown',()=>mode=='boot'&&bootKey());
+
+// ===== interaction =====
+function say(h,b,f){npcOpen=false;const d=$('dlg');d.innerHTML='<b>'+h+'</b>'+b+(f?'<i>'+f+'</i>':'');d.hidden=false}
+function talk(i){
+    const c=NP[i],k=NT[i]++%c.L.length;
+    say(c.n,c.L[k],'E: next line ('+(k+1)+'/'+c.L.length+')');
+    npcOpen=true;
+    // Log to intel feed
+    addIntel(c.s, c.L[k]);
+}
+function near(){let b=null,bd=34;for(const d of D){const e=Math.hypot(p.x-d.x,p.y-(d.y+6));if(e<bd){bd=e;b={t:'door',i:d.i}}}
+NP.forEach((n,i)=>{const e=Math.hypot(p.x-n.x,p.y-n.y);if(e<bd){bd=e;b={t:'npc',i}}});return b}
+function interact(){mode=='room'?leave():act()}
+function act(){const n=near();if(!n)return;if(n.t=='npc')return talk(n.i);
+visited[n.i]=1;ri=n.i;$('rn').textContent='ROOM '+(n.i+1);mode='room';ST.dataset.m='room';$('dlg').hidden=true;npcOpen=false;K.l=K.r=K.u=K.d=0;
+highlightCurrentRoom(n.i);
+addIntel('SYSTEM','Entered Room '+(n.i+1)+': '+R[n.i][0]+' ['+R[n.i][1]+']');
+}
+function leave(){const d=D.find(q=>q.i==ri);p.x=d.x;p.y=d.y+16;mode='hub';ST.dataset.m='hub';highlightCurrentRoom(-1)}
+
+// ===== movement =====
+const hit=(x,y)=>sol.some(s=>x-5<s[0]+s[2]&&x+5>s[0]&&y-4<s[1]+s[3]&&y>s[1]);
+function step(k){let dx=(K.r?1:0)-(K.l?1:0),dy=(K.d?1:0)-(K.u?1:0);p.mv=!!(dx||dy);if(!p.mv)return;
+const m=Math.hypot(dx,dy);dx*=1.9*k/m;dy*=1.9*k/m;if(dx)p.f=dx>0?1:-1;
+const nx=Math.max(14,Math.min(WW-14,p.x+dx));if(!hit(nx,p.y))p.x=nx;
+const ny=Math.max(WALL+24,Math.min(WH-12,p.y+dy));if(!hit(p.x,ny))p.y=ny}
+
+// ===== drawing =====
+function icon(i,cx,cy,c,s=1){X.save();X.translate(cx,cy);X.scale(s,s);X.strokeStyle=c;X.fillStyle=c;X.lineWidth=2;const B=()=>X.beginPath();
+switch(i){
+case 0:B();X.ellipse(0,0,14,8,0,0,7);X.stroke();X.fillRect(-3,-3,6,6);break;
+case 1:B();X.arc(-6,0,6,0,7);X.stroke();X.fillRect(0,-1,14,3);X.fillRect(9,2,3,5);X.fillRect(13,2,3,4);break;
+case 2:[4,10,16,8,14,6,12].forEach((h,k)=>X.fillRect(-15+k*5,-h/2,3,h));break;
+case 3:X.strokeRect(-14,-10,28,20);B();X.moveTo(-9,-4);X.lineTo(-4,0);X.lineTo(-9,4);X.stroke();X.fillRect(0,4,8,2);break;
+case 4:X.fillRect(-14,-10,4,22);X.fillRect(10,-10,4,22);B();X.arc(0,-8,10,Math.PI,0);X.stroke();X.fillRect(-1,-8,2,20);break;
+case 5:[-9,0,9].forEach(y=>{B();X.ellipse(0,y,12,4,0,0,7);X.stroke()});X.fillRect(-13,-9,2,18);X.fillRect(11,-9,2,18);break;
+case 6:B();X.arc(0,-5,6,0,7);X.stroke();B();X.arc(0,14,13,Math.PI,0);X.stroke();break;
+case 7:B();X.ellipse(0,2,7,9,0,0,7);X.stroke();[-6,0,6].forEach(y=>{X.fillRect(-14,y+2,7,2);X.fillRect(7,y+2,7,2)});X.fillRect(-5,-11,2,4);X.fillRect(3,-11,2,4);break;
+case 8:B();X.arc(0,0,12,0,7);X.stroke();X.fillRect(-1,-8,2,9);X.fillRect(0,0,7,2);break;
+default:B();X.moveTo(0,-13);X.lineTo(13,0);X.lineTo(0,13);X.lineTo(-13,0);X.closePath();X.stroke();X.fillRect(-4,-4,8,8)}
+X.restore()}
+function txt(t,x,y,c,sz=6){X.font=sz+'px "Press Start 2P",monospace';X.textAlign='center';X.fillStyle=c;X.fillText(t,Math.round(x),Math.round(y))}
+function hero(x,y,f,mv,t,P){P=P||{h:'#b01828',s:'#e8a37e',j:'#160a0a',t:'#ffe600',l:'#0d3a3a'};X.save();X.translate(Math.round(x),Math.round(y));X.scale(f,1);const b=mv?(t>>7&1):0;
+X.fillStyle='rgba(0,0,0,.5)';X.fillRect(-7,-1,14,3);
+X.fillStyle=P.h;X.fillRect(-6,-23,12,7);X.fillRect(-7,-20,2,6);X.fillRect(5,-20,2,4);
+X.fillStyle=P.s;X.fillRect(-4,-17,8,6);X.fillStyle=P.j;X.fillRect(-5,-11,10,8);
+X.fillStyle=P.t;X.fillRect(-5,-5,10,2);X.fillRect(-1,-11,2,6);
+if(P.e=='g'){X.fillStyle='#000';X.fillRect(-4,-15,3,2);X.fillRect(1,-15,3,2);X.fillRect(-1,-15,2,1)}
+if(P.e=='c'){X.fillStyle=P.t;X.fillRect(-6,-25,12,3);X.fillRect(2,-23,6,2)}
+if(P.e=='b'){X.fillStyle=P.h;X.fillRect(-2,-27,4,4)}
+X.fillStyle=P.l;X.fillRect(-4,-3-b,3,3+b);X.fillRect(1,-4+b,3,4-b);X.restore()}
+function door(d,t,n){const sx=Math.round(d.x-cam.x),sy=Math.round(d.y-cam.y),v=visited[d.i],hot=n&&n.t=='door'&&n.i==d.i,c=hot&&(t>>8&1)?'#ffe600':v?'#ffe600':'#ff1a1a';
+X.fillStyle='rgba(0,0,0,.5)';X.fillRect(sx-24,sy-3,48,6);X.fillStyle='#1f0000';X.fillRect(sx-22,sy-46,44,46);
+X.strokeStyle=c;X.lineWidth=3;X.strokeRect(sx-22,sy-46,44,46);X.fillStyle=c;X.fillRect(sx-22,sy-46,7,7);X.fillRect(sx+15,sy-46,7,7);
+icon(d.i,sx,sy-30,'#ffe600',.78);
+X.fillStyle='#050000';X.fillRect(sx-7,sy-14,14,14);X.strokeStyle=c;X.lineWidth=2;X.strokeRect(sx-7,sy-14,14,14);X.fillStyle=v?'#ffe600':'#300';X.fillRect(sx-1,sy-12,2,12);}
+function npc(c,i,t){const sx=c.x-cam.x,sy=c.y-cam.y;hero(sx,sy,Math.sign(p.x-c.x)||1,false,t,c.P);
+if(!NT[i]){const b=Math.sin(t/200)*2|0;X.fillStyle='#ffe600';X.fillRect(sx-3,sy-48+b,6,8);X.fillRect(sx-3,sy-38+b,6,2)}}
+function drawHub(t){const cx=cam.x|0,cy=cam.y|0,n=near();X.fillStyle='#0a0000';X.fillRect(0,0,W,H);
+X.fillStyle='#220505';for(let x=-(cx%32);x<W;x+=32)X.fillRect(x,0,1,H);for(let y=-(cy%32);y<H;y+=32)X.fillRect(0,y,W,1);
+X.fillStyle='#6a5a00';for(let x=-(cx%32);x<W;x+=32)for(let y=-(cy%32);y<H;y+=32)if(((x+cx)/32+(y+cy)/32)%5==0)X.fillRect(x-1,y-1,3,3);
+X.textAlign='left';X.font='5px "Press Start 2P",monospace';X.fillStyle='#3a0d0d';for(const f of FS){const x=f[0]-cx,y=f[1]-cy;if(x>-90&&x<W&&y>0&&y<H)X.fillText(f[2],x,y)}
+if(cy<WALL){X.fillStyle='#120202';X.fillRect(0,0,W,WALL-cy);
+for(const[x,w,sd]of WN){const sx=x-cx,sy=6-cy;if(sx<-w||sx>W)continue;
+X.fillStyle='#1a0303';X.fillRect(sx,sy,w,52);X.strokeStyle='#6a1010';X.lineWidth=1;X.strokeRect(sx+.5,sy+.5,w-1,51);
+X.fillStyle='#4a0a0a';X.fillRect(sx,sy,w,7);X.fillStyle='#ff1a1a';[3,9,15].forEach(q=>X.fillRect(sx+q,sy+2,3,3));
+X.textAlign='left';X.font='5px "Press Start 2P",monospace';for(let r=0;r<5;r++){X.fillStyle=r%3==0?'#a08a00':'#8a2a2a';X.fillText(CM[(sd+r)%CM.length].slice(0,(w-8)/5|0),sx+4,sy+17+r*8)}
+if(t>>9&1){X.fillStyle='#ffe600';X.fillRect(sx+4,sy+44,4,5)}}
+X.fillStyle='#ff1a1a';X.fillRect(0,WALL-cy,W,2)}
+X.strokeStyle='#ff1a1a';X.lineWidth=3;X.strokeRect(3-cx,3-cy,WW-6,WH-6);
+const E=[];D.forEach(d=>E.push([d.y,()=>door(d,t,n)]));NP.forEach((c,i)=>E.push([c.y,()=>npc(c,i,t)]));E.push([p.y,()=>hero(p.x-cx,p.y-cy,p.f,p.mv,t)]);
+E.sort((a,b)=>a[0]-b[0]).forEach(e=>e[1]())}
+function drawRoom(){X.fillStyle='#000';X.fillRect(0,0,W,H)}
+
+// HD door labels & NPC labels
+const LB=D.map(d=>{const e=document.createElement('div');e.className='lb';e.innerHTML='<em>ROOM '+(d.i+1)+'</em>'+R[d.i][0];ST.insertBefore(e,$('rn'));return e});
+const NPCLB=NP.map(n=>{const e=document.createElement('div');e.className='npc-lb';e.textContent=n.s;ST.insertBefore(e,$('rn'));return e});
+function labels(){const s=ST.clientWidth/W;
+D.forEach((d,i)=>{const x=d.x-cam.x,y=d.y-cam.y+8,e=LB[i],off=x<-70||x>W+70||y<-30||y>H+40;e.style.display=off?'none':'';if(!off){e.style.transform='translate('+(x*s).toFixed(1)+'px,'+(y*s).toFixed(1)+'px) translateX(-50%)';e.classList.toggle('v',!!visited[d.i])}});
+NP.forEach((n,i)=>{const x=n.x-cam.x,y=n.y-cam.y-31,e=NPCLB[i],off=x<-70||x>W+70||y<-30||y>H+40;e.style.display=off?'none':'';if(!off){e.style.transform='translate('+(x*s).toFixed(1)+'px,'+(y*s).toFixed(1)+'px) translateX(-50%)';}});
+}
+
+// ===== loop =====
+let last=0;const t0=Date.now(),f2=v=>String(v).padStart(2,'0');
+function loop(t){const k=Math.min(2,(t-last)/16.7||1);last=t;
+if(mode=='hub'){step(k);cam.x=Math.max(0,Math.min(WW-W,p.x-W/2));cam.y=Math.max(0,Math.min(WH-H,p.y-H/2-10))}
+mode=='room'?drawRoom():drawHub(t);X.fillStyle=sl;X.fillRect(0,0,W,H);
+if(mode=='hub'){labels();const n=near(),pr=$('prompt');
+$('h1').textContent='> HUB: meraz-gate';$('h2').textContent='Rooms '+visited.filter(Boolean).length+'/10  |  Allies '+NT.filter(Boolean).length+'/3';$('h3').textContent='Walk anywhere. Any door, any order.';
+if(npcOpen&&!(n&&n.t=='npc')){npcOpen=false;$('dlg').hidden=true}
+const m=n?n.t=='npc'?'E: talk to '+NP[n.i].s:'E: enter Room '+(n.i+1):'';pr.hidden=!m||!$('dlg').hidden;pr.textContent=m;
+// Update nav timer + sidebar
+const s=(Date.now()-t0)/1000|0;
+const timerStr='23:'+f2(17+(s/60|0))+':'+f2(s%60);
+$('clk').innerHTML=timerStr+'<small>NEXUS OFFLINE</small>';
+$('nav-timer').innerHTML=timerStr+'<small>NEXUS OFFLINE</small>';
+updateSidebar(visited, NT);
+}
+requestAnimationFrame(loop)}
+addEventListener('resize',()=>mode=='boot'&&sizeMx());
+(document.fonts&&document.fonts.load?document.fonts.load('8px "Press Start 2P"'):Promise.resolve()).finally(()=>{if(mode==='boot')bootRun();requestAnimationFrame(loop)});
+</script>
+</body></html>

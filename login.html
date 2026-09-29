@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<title>NIGHTJAR — Terminal Login</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap">
+<style>
+:root{--bg:#0a0000;--red:#ff1a1a;--dim:#5a0a0a;--yel:#ffe600;--ink:#ffd9d9;box-sizing:border-box;}
+body{margin:0;height:100vh;background:var(--bg);color:var(--ink);font-family:"Press Start 2P","Courier New",monospace;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.box { border: 2px solid var(--red); padding: 2rem; background: #050000; box-shadow: 10px 10px 0 #400; max-width: 500px; width: 90%; }
+h1 { color: var(--yel); font-size: 1.2rem; margin-top: 0; text-align: center; line-height: 1.5; }
+label { display: block; margin-top: 1.5rem; font-size: 0.8rem; color: #ffb0b0; }
+input { width: 100%; padding: 0.8rem; margin-top: 0.5rem; background: #000; border: 1px solid var(--red); color: var(--yel); font-family: inherit; font-size: 0.8rem; box-sizing: border-box; }
+input:focus { outline: none; border-color: var(--yel); }
+button { width: 100%; padding: 1rem; margin-top: 2rem; background: var(--red); color: #000; font-family: inherit; font-size: 0.9rem; border: none; cursor: pointer; transition: 0.2s; }
+button:hover { background: var(--yel); }
+.error { color: var(--red); margin-top: 1rem; font-size: 0.8rem; text-align: center; }
+.toggle { text-align: center; margin-top: 1.5rem; font-size: 0.7rem; cursor: pointer; color: #c66; text-decoration: underline; }
+.toggle:hover { color: var(--yel); }
+</style>
+</head>
+<body>
+<div class="box">
+    <h1 id="title">SPECTRE AUTHENTICATION</h1>
+    <form id="auth-form" onsubmit="submitForm(event)">
+        <label>TEAM NAME</label>
+        <input type="text" id="teamname" required>
+        
+        <label>USERNAME</label>
+        <input type="text" id="username" required>
+        
+        <label>ACCESS CODE</label>
+        <input type="password" id="password" required>
+        
+        <div id="error-msg" class="error"></div>
+        <button type="submit" id="btn-submit">JACK IN (REGISTER)</button>
+    </form>
+    <div class="toggle" onclick="toggleMode()" id="toggle-txt">Already registered? Log in here.</div>
+</div>
+<script>
+let mode = 'register'; 
+function toggleMode() {
+    mode = mode === 'register' ? 'login' : 'register';
+    document.getElementById('btn-submit').innerText = mode === 'register' ? 'JACK IN (REGISTER)' : 'AUTHENTICATE (LOGIN)';
+    document.getElementById('toggle-txt').innerText = mode === 'register' ? 'Already registered? Log in here.' : 'Need a team? Register here.';
+    document.getElementById('error-msg').innerText = '';
+}
+async function submitForm(e) {
+    e.preventDefault();
+    const team = document.getElementById('teamname').value;
+    const user = document.getElementById('username').value;
+    const pass = document.getElementById('password').value;
+    
+    const url = mode === 'register' ? '/api/register' : '/api/login';
+    const body = new URLSearchParams({ team_name: team, username: user, password: pass });
+    
+    try {
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: body
+        });
+        const data = await res.json();
+        if (res.ok) {
+            window.location.href = '/hub';
+        } else {
+            document.getElementById('error-msg').innerText = data.detail || "Authentication Failed";
+        }
+    } catch(err) {
+        document.getElementById('error-msg').innerText = "System offline.";
+    }
+}
+</script>
+</body></html>
