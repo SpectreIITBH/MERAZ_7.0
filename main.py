@@ -15,9 +15,20 @@ models.Base.metadata.create_all(bind=database.engine)
 
 app = FastAPI(title="NIGHTJAR API")
 
-@app.route("/{full_path:path}", methods=["GET", "POST", "PUT", "DELETE"])
-async def catch_all(request: Request):
-    return JSONResponse({"received_path": request.scope.get("path"), "url_path": request.url.path, "raw_path": request.scope.get("raw_path", b"").decode()})
+class StripVercelPathMiddleware:
+    def __init__(self, app):
+        self.app = app
+    async def __call__(self, scope, receive, send):
+        if scope["type"] == "http":
+            path = scope.get("path", "")
+            if path.startswith("/api/index.py"):
+                path = path.replace("/api/index.py", "", 1)
+            elif path.startswith("/main.py"):
+                path = path.replace("/main.py", "", 1)
+            scope["path"] = path or "/"
+        return await self.app(scope, receive, send)
+
+app.add_middleware(StripVercelPathMiddleware)
 
 from fastapi.staticfiles import StaticFiles
 import os
