@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEXUS Banner — Image Metadata Report</title>
+    <meta name="description" content="Metadata analysis of the NEXUS festival banner image">
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Consolas', 'Courier New', monospace;
+            background: #0a0a0f;
+            color: #c0c0d0;
+            padding: 2rem;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #1e1e2e;
+        }
+        .header h1 { color: #00e5ff; font-size: 1.2rem; letter-spacing: 2px; }
+        .header p { color: #4a4a5a; font-size: 0.75rem; margin-top: 0.3rem; }
+
+        .banner-preview {
+            background: linear-gradient(135deg, #0d0d1a, #1a0d2e, #0d1a1a);
+            border: 1px solid #1e1e2e;
+            border-radius: 8px;
+            padding: 3rem;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .banner-preview h2 {
+            font-size: 2.5rem;
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(90deg, #00e5ff, #ffab00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 5px;
+        }
+        .banner-preview .tagline {
+            color: #6a6a8a;
+            font-size: 0.9rem;
+            margin-top: 0.8rem;
+            letter-spacing: 2px;
+        }
+        .banner-preview .system {
+            color: #2a2a3a;
+            font-size: 0.6rem;
+            margin-top: 1.5rem;
+            letter-spacing: 1px;
+        }
+
+        .metadata-section {
+            background: #111118;
+            border: 1px solid #1e1e2e;
+            border-radius: 6px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .metadata-section h3 {
+            color: #ffab00;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #1e1e2e;
+        }
+
+        .meta-row {
+            display: flex;
+            padding: 0.3rem 0;
+            font-size: 0.8rem;
+            border-bottom: 1px solid #0d0d14;
+        }
+        .meta-key {
+            width: 200px;
+            color: #5a5a7a;
+            flex-shrink: 0;
+        }
+        .meta-value { color: #c0c0d0; }
+        .meta-value.highlight { color: #00e5ff; }
+        .meta-value.warning { color: #ffab00; }
+        .meta-value.suspect { color: #ff4444; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>NEXUS BANNER — METADATA ANALYSIS</h1>
+    <p>File: nexus_banner_final.png — Extracted EXIF & File Properties</p>
+</div>
+
+<div class="banner-preview">
+    <h2>MERAZ 7.0</h2>
+    <div class="tagline">THE FUTURE IS NOW — NEXUS FESTIVAL PLATFORM</div>
+    <div class="system">Powered by NEXUS v3.2.1 — IIT Bhilai</div>
+</div>
+
+<div class="metadata-section">
+    <h3>📁 File Information</h3>
+    <div class="meta-row"><span class="meta-key">Filename</span><span class="meta-value">nexus_banner_final.png</span></div>
+    <div class="meta-row"><span class="meta-key">File Size</span><span class="meta-value">2,847,293 bytes (2.7 MB)</span></div>
+    <div class="meta-row"><span class="meta-key">Image Dimensions</span><span class="meta-value">3840 x 1080 px</span></div>
+    <div class="meta-row"><span class="meta-key">Color Space</span><span class="meta-value">sRGB</span></div>
+    <div class="meta-row"><span class="meta-key">Bit Depth</span><span class="meta-value">24</span></div>
+    <div class="meta-row"><span class="meta-key">MIME Type</span><span class="meta-value">image/png</span></div>
+</div>
+
+<div class="metadata-section">
+    <h3>📷 EXIF Data</h3>
+    <div class="meta-row"><span class="meta-key">Creator Tool</span><span class="meta-value warning">AetherForge v2.1</span></div>
+    <div class="meta-row"><span class="meta-key">Author</span><span class="meta-value suspect">Aman V. // Parallax Systems</span></div>
+    <div class="meta-row"><span class="meta-key">Copyright</span><span class="meta-value">Parallax Systems — Research Division</span></div>
+    <div class="meta-row"><span class="meta-key">Date Created</span><span class="meta-value warning">2026-05-18T04:12:09+05:30</span></div>
+    <div class="meta-row"><span class="meta-key">Date Modified</span><span class="meta-value">2026-09-26T16:30:22+05:30</span></div>
+    <div class="meta-row"><span class="meta-key">Software</span><span class="meta-value warning">AetherForge v2.1 — Parallax Internal Build</span></div>
+    <div class="meta-row"><span class="meta-key">Description</span><span class="meta-value">NEXUS Festival Banner — Deployment Asset</span></div>
+    <div class="meta-row"><span class="meta-key">Comment</span><span class="meta-value highlight">Project NIGHTJAR — Display Asset 03</span></div>
+</div>
+
+<div class="metadata-section">
+    <h3>🌍 GPS Data (Embedded)</h3>
+    <div class="meta-row"><span class="meta-key">GPS Latitude</span><span class="meta-value suspect">21.1833° N</span></div>
+    <div class="meta-row"><span class="meta-key">GPS Longitude</span><span class="meta-value suspect">81.3939° E</span></div>
+    <div class="meta-row"><span class="meta-key">GPS Altitude</span><span class="meta-value">312m above sea level</span></div>
+    <div class="meta-row"><span class="meta-key">Location Note</span><span class="meta-value warning">Coordinates do not match IIT Bhilai campus. Points to an unmarked location approximately 14km NE of Durg, CG.</span></div>
+</div>
+
+<div class="metadata-section">
+    <h3>🔧 Custom / Extended Properties</h3>
+    <div class="meta-row"><span class="meta-key">x-parallax-project</span><span class="meta-value highlight">NIGHTJAR</span></div>
+    <div class="meta-row"><span class="meta-key">x-parallax-build</span><span class="meta-value">prlx-af21-display-03</span></div>
+    <div class="meta-row"><span class="meta-key">x-parallax-org</span><span class="meta-value">Parallax Systems — Research Division</span></div>
+    <div class="meta-row"><span class="meta-key">x-contact</span><span class="meta-value suspect">aman.v@parallax-sys.net</span></div>
+    <div class="meta-row"><span class="meta-key">x-deployment-target</span><span class="meta-value">NEXUS Display Controller — All Connected Screens</span></div>
+    <div class="meta-row"><span class="meta-key">x-aether-sequence</span><span class="meta-value warning">03</span></div>
+</div>
+
+<div class="metadata-section">
+    <h3>⚠️ Anomaly Notes</h3>
+    <div class="meta-row"><span class="meta-key">Anomaly 1</span><span class="meta-value suspect">Author "Aman V. // Parallax Systems" is not on the Meraz volunteer or staff roster.</span></div>
+    <div class="meta-row"><span class="meta-key">Anomaly 2</span><span class="meta-value suspect">Creator tool "AetherForge v2.1" is not a known commercial or open-source image editor.</span></div>
+    <div class="meta-row"><span class="meta-key">Anomaly 3</span><span class="meta-value suspect">GPS coordinates do not match any known IIT Bhilai facility.</span></div>
+    <div class="meta-row"><span class="meta-key">Anomaly 4</span><span class="meta-value warning">Image was created on 2026-05-18, over 4 months before the festival.</span></div>
+    <div class="meta-row"><span class="meta-key">Anomaly 5</span><span class="meta-value warning">Custom property "x-parallax-project" references "NIGHTJAR" — the same name as the incident.</span></div>
+</div>
+
+</body>
+</html>

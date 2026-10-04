@@ -1,33 +1,70 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="utf-8">
+<html lang="en">
+<head>
+<meta charset="utf-8">
 <title>NIGHTJAR — Terminal Login</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap">
 <style>
 :root{--bg:#0a0000;--red:#ff1a1a;--dim:#5a0a0a;--yel:#ffe600;--ink:#ffd9d9;box-sizing:border-box;}
-body{margin:0;height:100vh;background:var(--bg);color:var(--ink);font-family:"Press Start 2P","Courier New",monospace;display:flex;flex-direction:column;align-items:center;justify-content:center;}
-.box { border: 2px solid var(--red); padding: 2rem; background: #050000; box-shadow: 10px 10px 0 #400; max-width: 500px; width: 90%; }
+body{margin:0;min-height:100vh;background:var(--bg);color:var(--ink);font-family:"Press Start 2P","Courier New",monospace;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.box { border: 2px solid var(--red); padding: 2rem; background: #050000; box-shadow: 10px 10px 0 #400; max-width: 600px; width: 90%; margin: 2rem 0; }
 h1 { color: var(--yel); font-size: 1.2rem; margin-top: 0; text-align: center; line-height: 1.5; }
-label { display: block; margin-top: 1.5rem; font-size: 0.8rem; color: #ffb0b0; }
+label { display: block; margin-top: 1rem; font-size: 0.8rem; color: #ffb0b0; }
 input { width: 100%; padding: 0.8rem; margin-top: 0.5rem; background: #000; border: 1px solid var(--red); color: var(--yel); font-family: inherit; font-size: 0.8rem; box-sizing: border-box; }
 input:focus { outline: none; border-color: var(--yel); }
-button { width: 100%; padding: 1rem; margin-top: 2rem; background: var(--red); color: #000; font-family: inherit; font-size: 0.9rem; border: none; cursor: pointer; transition: 0.2s; }
+button { width: 100%; padding: 1rem; margin-top: 1.5rem; background: var(--red); color: #000; font-family: inherit; font-size: 0.9rem; border: none; cursor: pointer; transition: 0.2s; }
 button:hover { background: var(--yel); }
+button.secondary { background: var(--dim); color: var(--ink); padding: 0.8rem; margin-top: 0.5rem; font-size: 0.7rem; }
+button.secondary:hover { background: var(--red); color: #000; }
 .error { color: var(--red); margin-top: 1rem; font-size: 0.8rem; text-align: center; }
+.success { color: #0f0; margin-top: 1rem; font-size: 0.8rem; text-align: center; }
 .toggle { text-align: center; margin-top: 1.5rem; font-size: 0.7rem; cursor: pointer; color: #c66; text-decoration: underline; }
 .toggle:hover { color: var(--yel); }
+
+/* Hide sections based on state */
+.hidden { display: none !important; }
+
+/* Radio buttons styling */
+.radio-group { display: flex; gap: 1rem; margin-top: 1rem; }
+.radio-group label { margin-top: 0; display: flex; align-items: center; gap: 0.5rem; cursor: pointer; }
 </style>
 </head>
 <body>
 <div class="box">
     <h1 id="title">SPECTRE AUTHENTICATION</h1>
     <form id="auth-form" onsubmit="submitForm(event)">
-        <label>TEAM NAME</label>
-        <input type="text" id="teamname" required>
         
+        <!-- Registration Fields -->
+        <div id="register-fields">
+            <label>EMAIL</label>
+            <input type="email" id="email">
+            <button type="button" class="secondary" id="btn-send-code" onclick="sendCode()">SEND VERIFICATION CODE</button>
+            <div id="code-msg" class="success"></div>
+
+            <label>VERIFICATION CODE</label>
+            <input type="text" id="verification_code" placeholder="6-digit code">
+
+            <div class="radio-group">
+                <label><input type="radio" name="team_action" value="create_team" checked onchange="toggleTeamAction()"> Create Team</label>
+                <label><input type="radio" name="team_action" value="join_team" onchange="toggleTeamAction()"> Join Team</label>
+            </div>
+
+            <div id="create-team-section">
+                <label>NEW TEAM NAME (Max 4 members)</label>
+                <input type="text" id="teamname">
+            </div>
+
+            <div id="join-team-section" class="hidden">
+                <label>TEAM INVITE CODE</label>
+                <input type="text" id="invite_code">
+            </div>
+        </div>
+
+        <!-- Common Fields -->
         <label>USERNAME</label>
         <input type="text" id="username" required>
         
-        <label>ACCESS CODE</label>
+        <label>ACCESS CODE (PASSWORD)</label>
         <input type="password" id="password" required>
         
         <div id="error-msg" class="error"></div>
@@ -37,22 +74,113 @@ button:hover { background: var(--yel); }
 </div>
 <script>
 let mode = 'register'; 
+
 function toggleMode() {
     mode = mode === 'register' ? 'login' : 'register';
+    
+    document.getElementById('register-fields').classList.toggle('hidden', mode === 'login');
+    
     document.getElementById('btn-submit').innerText = mode === 'register' ? 'JACK IN (REGISTER)' : 'AUTHENTICATE (LOGIN)';
     document.getElementById('toggle-txt').innerText = mode === 'register' ? 'Already registered? Log in here.' : 'Need a team? Register here.';
     document.getElementById('error-msg').innerText = '';
+    document.getElementById('code-msg').innerText = '';
 }
-async function submitForm(e) {
-    e.preventDefault();
-    const team = document.getElementById('teamname').value;
-    const user = document.getElementById('username').value;
-    const pass = document.getElementById('password').value;
+
+function toggleTeamAction() {
+    const action = document.querySelector('input[name="team_action"]:checked').value;
+    document.getElementById('create-team-section').classList.toggle('hidden', action !== 'create_team');
+    document.getElementById('join-team-section').classList.toggle('hidden', action !== 'join_team');
+}
+
+async function sendCode() {
+    const email = document.getElementById('email').value;
+    const btn = document.getElementById('btn-send-code');
+    const msg = document.getElementById('code-msg');
+    const err = document.getElementById('error-msg');
     
-    const url = mode === 'register' ? '/api/register' : '/api/login';
-    const body = new URLSearchParams({ team_name: team, username: user, password: pass });
+    err.innerText = '';
+    msg.innerText = '';
+    
+    if (!email) {
+        err.innerText = "Please enter an email address first.";
+        return;
+    }
+    
+    btn.disabled = true;
+    btn.innerText = "SENDING...";
     
     try {
+        const body = new URLSearchParams({ email: email });
+        const res = await fetch('/api/send-code', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: body
+        });
+        const data = await res.json();
+        
+        if (res.ok) {
+            msg.innerText = "Code sent! Check your terminal output (since this is dev mode).";
+        } else {
+            err.innerText = data.detail || "Failed to send code";
+        }
+    } catch(e) {
+        err.innerText = "System offline.";
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "RESEND CODE";
+    }
+}
+
+async function submitForm(e) {
+    e.preventDefault();
+    const user = document.getElementById('username').value;
+    const pass = document.getElementById('password').value;
+    const err = document.getElementById('error-msg');
+    err.innerText = '';
+    
+    const url = mode === 'register' ? '/api/register' : '/api/login';
+    let body;
+    
+    if (mode === 'register') {
+        const email = document.getElementById('email').value;
+        const vCode = document.getElementById('verification_code').value;
+        const action = document.querySelector('input[name="team_action"]:checked').value;
+        const teamName = document.getElementById('teamname').value;
+        const inviteCode = document.getElementById('invite_code').value;
+        
+        if (!email || !vCode) {
+            err.innerText = "Email and verification code are required.";
+            return;
+        }
+        
+        if (action === 'create_team' && !teamName) {
+            err.innerText = "Team name is required to create a team.";
+            return;
+        }
+        
+        if (action === 'join_team' && !inviteCode) {
+            err.innerText = "Invite code is required to join a team.";
+            return;
+        }
+        
+        body = new URLSearchParams({ 
+            action: action,
+            email: email,
+            verification_code: vCode,
+            username: user, 
+            password: pass,
+            team_name: teamName,
+            invite_code: inviteCode
+        });
+    } else {
+        body = new URLSearchParams({ username: user, password: pass });
+    }
+    
+    try {
+        const btn = document.getElementById('btn-submit');
+        btn.disabled = true;
+        btn.innerText = "PROCESSING...";
+        
         const res = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -62,11 +190,17 @@ async function submitForm(e) {
         if (res.ok) {
             window.location.href = '/hub';
         } else {
-            document.getElementById('error-msg').innerText = data.detail || "Authentication Failed";
+            err.innerText = data.detail || "Authentication Failed";
+            btn.disabled = false;
+            btn.innerText = mode === 'register' ? 'JACK IN (REGISTER)' : 'AUTHENTICATE (LOGIN)';
         }
     } catch(err) {
         document.getElementById('error-msg').innerText = "System offline.";
+        const btn = document.getElementById('btn-submit');
+        btn.disabled = false;
+        btn.innerText = mode === 'register' ? 'JACK IN (REGISTER)' : 'AUTHENTICATE (LOGIN)';
     }
 }
 </script>
-</body></html>
+</body>
+</html>
