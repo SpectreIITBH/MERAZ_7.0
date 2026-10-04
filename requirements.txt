@@ -4,3 +4,4 @@ sqlalchemy
 python-multipart
 passlib[bcrypt]
 pyjwt
+psycopg2-binary
