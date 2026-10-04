@@ -15,6 +15,10 @@ models.Base.metadata.create_all(bind=database.engine)
 
 app = FastAPI(title="NIGHTJAR API")
 
+@app.route("/{full_path:path}", methods=["GET", "POST", "PUT", "DELETE"])
+async def catch_all(request: Request):
+    return JSONResponse({"received_path": request.scope.get("path"), "url_path": request.url.path, "raw_path": request.scope.get("raw_path", b"").decode()})
+
 from fastapi.staticfiles import StaticFiles
 import os
 
