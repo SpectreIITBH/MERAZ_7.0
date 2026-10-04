@@ -5,4 +5,5 @@ python-multipart
 passlib
 bcrypt==3.2.2
 pyjwt
+psycopg[binary]
 psycopg2-binary
