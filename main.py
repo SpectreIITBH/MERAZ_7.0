@@ -6,12 +6,36 @@ from passlib.context import CryptContext
 import jwt
 import datetime
 import os
+import random
+import string
 
 import database, models
 
 models.Base.metadata.create_all(bind=database.engine)
 
 app = FastAPI(title="NIGHTJAR API")
+
+class StripVercelPathMiddleware:
+    def __init__(self, app):
+        self.app = app
+    async def __call__(self, scope, receive, send):
+        if scope["type"] == "http":
+            path = scope.get("path", "")
+            if path.startswith("/api/index.py"):
+                path = path.replace("/api/index.py", "", 1)
+            elif path.startswith("/main.py"):
+                path = path.replace("/main.py", "", 1)
+            scope["path"] = path or "/"
+        return await self.app(scope, receive, send)
+
+app.add_middleware(StripVercelPathMiddleware)
+
+from fastapi.staticfiles import StaticFiles
+import os
+
+if os.path.isdir("Challenges"):
+    app.mount("/challenges", StaticFiles(directory="Challenges"), name="challenges")
+
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 SECRET_KEY = "nightjar_super_secret" 
@@ -59,6 +83,20 @@ async def read_admin(request: Request, user: models.User = Depends(get_current_u
     with open("admin.html", "r", encoding="utf-8") as f:
         return HTMLResponse(content=f.read())
 
+@app.get("/room/{room_id}", response_class=HTMLResponse)
+async def read_room(room_id: int, request: Request, user: models.User = Depends(get_current_user)):
+    if not user:
+        return RedirectResponse(url="/")
+    room_files = {
+        1: "room1.html",
+    }
+    filename = room_files.get(room_id)
+    if filename and os.path.exists(filename):
+        with open(filename, "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
+    # Fallback: redirect to hub if room page doesn't exist yet
+    return RedirectResponse(url="/hub")
+
 @app.get("/scoreboard", response_class=HTMLResponse)
 async def read_scoreboard():
     with open("scoreboard.html", "r", encoding="utf-8") as f:
@@ -66,29 +104,90 @@ async def read_scoreboard():
 
 # ─── Auth API ──────────────────────────────────────────────────
 
+@app.post("/api/send-code")
+async def send_verification_code(
+    email: str = Form(...),
+    db: Session = Depends(database.get_db)
+):
+    code = ''.join(random.choices(string.digits, k=6))
+    expire = datetime.datetime.utcnow() + datetime.timedelta(minutes=15)
+    
+    vc = db.query(models.VerificationCode).filter(models.VerificationCode.email == email).first()
+    if vc:
+        vc.code = code
+        vc.expires_at = expire
+    else:
+        vc = models.VerificationCode(email=email, code=code, expires_at=expire)
+        db.add(vc)
+    db.commit()
+    
+    print(f"\n[MOCK EMAIL] Verification code for {email} is: {code}\n")
+    return {"message": "Verification code sent to email"}
+
 @app.post("/api/register")
 async def register(
     response: Response,
-    team_name: str = Form(...),
+    action: str = Form(...),
+    email: str = Form(...),
+    verification_code: str = Form(...),
     username: str = Form(...),
     password: str = Form(...),
+    team_name: str = Form(None),
+    invite_code: str = Form(None),
     db: Session = Depends(database.get_db)
 ):
+    vc = db.query(models.VerificationCode).filter(models.VerificationCode.email == email).first()
+    if not vc or vc.code != verification_code or vc.expires_at < datetime.datetime.utcnow():
+        raise HTTPException(status_code=400, detail="Invalid or expired verification code")
+        
     if db.query(models.User).filter(models.User.username == username).first():
         raise HTTPException(status_code=400, detail="Username already registered")
-    
-    team = db.query(models.Team).filter(models.Team.name == team_name).first()
-    if not team:
-        team = models.Team(name=team_name)
+        
+    if db.query(models.User).filter(models.User.email == email).first():
+        raise HTTPException(status_code=400, detail="Email already registered")
+
+    team = None
+    if action == "create_team":
+        if not team_name:
+            raise HTTPException(status_code=400, detail="Team name required to create team")
+        if db.query(models.Team).filter(models.Team.name == team_name).first():
+            raise HTTPException(status_code=400, detail="Team name already taken")
+        
+        new_invite_code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+        team = models.Team(name=team_name, invite_code=new_invite_code)
         db.add(team)
         db.commit()
         db.refresh(team)
-    
+    elif action == "join_team":
+        if not invite_code:
+            raise HTTPException(status_code=400, detail="Invite code required to join team")
+        team = db.query(models.Team).filter(models.Team.invite_code == invite_code).first()
+        if not team:
+            raise HTTPException(status_code=400, detail="Invalid invite code")
+        if len(team.users) >= 4:
+            raise HTTPException(status_code=400, detail="Team is full (max 4 members)")
+    else:
+        raise HTTPException(status_code=400, detail="Invalid action")
+
     hashed_password = pwd_context.hash(password)
-    user = models.User(username=username, hashed_password=hashed_password, team_id=team.id)
+    user = models.User(
+        username=username, 
+        email=email,
+        is_email_verified=True,
+        hashed_password=hashed_password, 
+        team_id=team.id
+    )
     db.add(user)
     db.commit()
+    db.refresh(user)
     
+    if action == "create_team":
+        team.leader_id = user.id
+        db.commit()
+    
+    db.delete(vc)
+    db.commit()
+
     expire = datetime.datetime.utcnow() + datetime.timedelta(hours=24)
     token = jwt.encode({"sub": username, "exp": expire}, SECRET_KEY, algorithm="HS256")
     response.set_cookie(key="access_token", value=f"Bearer {token}", httponly=True)
@@ -97,7 +196,6 @@ async def register(
 @app.post("/api/login")
 async def login(
     response: Response,
-    team_name: str = Form(...),
     username: str = Form(...),
     password: str = Form(...),
     db: Session = Depends(database.get_db)
@@ -105,9 +203,6 @@ async def login(
     user = db.query(models.User).filter(models.User.username == username).first()
     if not user or not pwd_context.verify(password, user.hashed_password):
         raise HTTPException(status_code=400, detail="Incorrect username or password")
-    
-    if user.team.name != team_name:
-        raise HTTPException(status_code=400, detail="Incorrect team name for this user")
 
     expire = datetime.datetime.utcnow() + datetime.timedelta(hours=24)
     token = jwt.encode({"sub": username, "exp": expire}, SECRET_KEY, algorithm="HS256")
@@ -122,11 +217,81 @@ async def logout(response: Response):
 # ─── Game API ──────────────────────────────────────────────────
 
 @app.post("/api/submit_flag")
-async def submit_flag(room_id: int, flag: str, user: models.User = Depends(get_current_user), db: Session = Depends(database.get_db)):
+async def submit_flag(room_id: int = Form(...), flag: str = Form(...), user: models.User = Depends(get_current_user), db: Session = Depends(database.get_db)):
     if not user:
         raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    # Define valid flags per room — each room has 4 challenges worth 25 pts each
+    valid_flags = {
+        1: [
+            "NIGHTJAR{aether_07_nothing_stays_local}",
+            "NIGHTJAR{parallax_systems_aman_v}",
+            "NIGHTJAR{nexus-meraz.festival.in.net}",
+            "NIGHTJAR{curator_404}"
+        ],
+        2: [
+            "NIGHTJAR{the_host_with_the_blue_name_is_lying}",
+            "NIGHTJAR{blue_name_is_host_alias_not_a_person}",
+            "NIGHTJAR{ask_the_person_who_never_signs_in}",
+            "NIGHTJAR{aether_7_relay_compromised}"
+        ],
+        3: [
+            "NIGHTJAR{10.7.7.43_to_203.0.113.77_port_8443}",
+            "NIGHTJAR{maint_window_0200_user_kite_backup}",
+            "NIGHTJAR{restore_aether_core_confirmed}",
+            "NIGHTJAR{port_4477_mira_7_propagation_service}"
+        ]
+    }
+    
+    if room_id in valid_flags and flag in valid_flags[room_id]:
+        if user.team:
+            # Check if this exact flag was already submitted by this team
+            already = db.query(models.FlagSubmission).filter(
+                models.FlagSubmission.team_id == user.team.id,
+                models.FlagSubmission.room_id == room_id,
+                models.FlagSubmission.is_correct == True,
+                models.FlagSubmission.flag_value == flag
+            ).first()
+            if already:
+                return {"success": True, "message": "Already submitted! Flag was correct."}
+            
+            # Record the submission
+            sub = models.FlagSubmission(
+                team_id=user.team.id,
+                room_id=room_id,
+                is_correct=True,
+                flag_value=flag
+            )
+            db.add(sub)
+            user.team.score += 25  # Each flag gives 25 points
+            
+            # Check if all 4 flags for this room are solved
+            correct_in_room = db.query(models.FlagSubmission).filter(
+                models.FlagSubmission.team_id == user.team.id,
+                models.FlagSubmission.room_id == room_id,
+                models.FlagSubmission.is_correct == True
+            ).count() + 1  # +1 for the one we're about to add
+            
+            if correct_in_room >= 4 and user.team.current_room <= room_id:
+                user.team.current_room = room_id + 1
+            
+            db.commit()
+        return {"success": True, "message": "Correct! Flag accepted."}
+    
+    # Log incorrect submission
+    if user.team:
+        sub = models.FlagSubmission(
+            team_id=user.team.id,
+            room_id=room_id,
+            is_correct=False,
+            flag_value=flag
+        )
+        db.add(sub)
+        db.commit()
+    
     if flag == "TEST_FLAG":
-        return {"success": True, "message": "Correct! Room unlocked."}
+        return {"success": True, "message": "Correct! Room unlocked (TEST)."}
+        
     return {"success": False, "message": "Incorrect flag. Try again."}
 
 @app.get("/api/me")
@@ -136,7 +301,9 @@ async def get_me(user: models.User = Depends(get_current_user)):
     return {
         "username": user.username,
         "is_admin": user.is_admin,
-        "team": user.team.name if user.team else None
+        "team": user.team.name if user.team else None,
+        "invite_code": user.team.invite_code if (user.team and user.team.leader_id == user.id) else None,
+        "is_leader": (user.team and user.team.leader_id == user.id)
     }
 
 # ─── Scoreboard API (public) ──────────────────────────────────

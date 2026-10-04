@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NIGHTJAR — Room 1: The Empty Signal</title>
+<meta name="description" content="Room 1: OSINT and Reconnaissance — Trace the first person who knew the breach was coming.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=JetBrains+Mono:wght@400;700&display=swap">
+<style>
+/* ─── Reset & Variables ─── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+--bg:#060008;--surface:#0c0014;--card:#0f0018;--card-hover:#140020;
+--red:#ff1a1a;--red-dim:#5a0a0a;--red-glow:rgba(255,26,26,.25);
+--yel:#ffe600;--yel-dim:#a09200;
+--cyan:#00f0ff;--cyan-dim:#005a60;
+--ink:#ffd9d9;--ink-dim:#8a6a6a;
+--green:#00ff6a;--green-dim:#005a28;
+--purple:#b44aff;--purple-dim:#5a2080;
+--border:rgba(255,26,26,.2);--radius:6px;
+--nav-h:52px;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--ink);font-family:"JetBrains Mono","Courier New",monospace;font-size:13px;line-height:1.6;min-height:100vh}
+
+/* ─── CRT Overlay ─── */
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:9999;background:repeating-linear-gradient(0deg,rgba(0,0,0,.08) 0 1px,transparent 1px 3px);opacity:.4}
+
+/* ─── Top Navigation ─── */
+.nav{position:fixed;top:0;left:0;right:0;height:var(--nav-h);z-index:100;background:rgba(6,0,8,.94);backdrop-filter:blur(16px);border-bottom:2px solid var(--red);display:flex;align-items:center;padding:0 16px;gap:12px}
+.nav-brand{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.nav-brand h1{font-family:"Press Start 2P",monospace;font-size:11px;color:var(--red);text-shadow:0 0 12px rgba(255,26,26,.5);letter-spacing:1px;white-space:nowrap}
+.nav-brand h1 span{color:var(--yel)}
+.nav-sep{width:1px;height:28px;background:var(--border);flex-shrink:0}
+.nav-links{display:flex;gap:4px;flex-shrink:0}
+.nav-link{font-family:inherit;font-size:10px;padding:6px 12px;border:1px solid var(--border);border-radius:var(--radius);background:transparent;color:var(--ink-dim);cursor:pointer;transition:all .2s;text-decoration:none;white-space:nowrap;display:flex;align-items:center;gap:5px}
+.nav-link:hover{border-color:var(--cyan);color:var(--cyan);background:rgba(0,240,255,.05);box-shadow:0 0 12px rgba(0,240,255,.1)}
+.nav-spacer{flex:1}
+.nav-timer{font-family:"Press Start 2P",monospace;font-size:10px;color:var(--red);text-shadow:0 0 8px rgba(255,26,26,.4);white-space:nowrap}
+.nav-timer small{color:var(--red-dim);font-size:8px;margin-left:4px}
+
+/* ═══════════════════════════════════════════════════
+   ENTRY SEQUENCE — Full-screen cinematic intro
+   ═══════════════════════════════════════════════════ */
+#entry-overlay{position:fixed;inset:0;z-index:200;background:#020005;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 1s ease;overflow:hidden}
+#entry-overlay.fade-out{opacity:0;pointer-events:none}
+#entry-overlay.hidden{display:none}
+
+/* Signal waveform canvas */
+#signal-canvas{position:absolute;inset:0;opacity:.3}
+
+/* Glitch text */
+.entry-room-id{font-family:"Press Start 2P",monospace;font-size:clamp(28px,8vw,72px);color:var(--red);text-shadow:0 0 40px rgba(255,26,26,.6),.3vw .3vw 0 #600;letter-spacing:8px;animation:glitch-text .15s steps(2) infinite;position:relative;z-index:1}
+.entry-room-name{font-family:"Press Start 2P",monospace;font-size:clamp(10px,2.5vw,18px);color:var(--yel);letter-spacing:4px;margin-top:16px;opacity:0;animation:fade-up .8s ease forwards;animation-delay:1.2s;z-index:1}
+.entry-domain{font-family:"JetBrains Mono",monospace;font-size:clamp(8px,1.5vw,12px);color:var(--cyan-dim);letter-spacing:3px;margin-top:12px;opacity:0;animation:fade-up .8s ease forwards;animation-delay:1.8s;z-index:1;text-transform:uppercase}
+.entry-briefing{max-width:600px;text-align:center;font-size:clamp(9px,1.4vw,13px);color:var(--ink-dim);line-height:2;margin-top:32px;opacity:0;animation:fade-up 1s ease forwards;animation-delay:2.5s;z-index:1;padding:0 20px}
+.entry-briefing em{color:var(--red);font-style:normal;font-weight:700}
+.entry-proceed{font-family:"Press Start 2P",monospace;font-size:11px;color:var(--yel);margin-top:40px;cursor:pointer;padding:12px 28px;border:2px solid var(--yel);background:transparent;border-radius:4px;opacity:0;animation:fade-up .6s ease forwards,pulse-border 2s infinite;animation-delay:3.8s,3.8s;z-index:1;transition:all .2s}
+.entry-proceed:hover{background:rgba(255,230,0,.1);box-shadow:0 0 20px rgba(255,230,0,.3);transform:scale(1.05)}
+
+.entry-scanline{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--red),transparent);animation:scanline 3s linear infinite;z-index:2;opacity:.5}
+
+@keyframes glitch-text{0%{text-shadow:0 0 40px rgba(255,26,26,.6),.3vw .3vw 0 #600}50%{text-shadow:-.2vw -.1vw 0 #0ff,.2vw .1vw 0 #f0f,0 0 30px rgba(255,26,26,.4)}}
+@keyframes fade-up{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+@keyframes scanline{from{top:-2px}to{top:100%}}
+@keyframes pulse-border{0%,100%{border-color:var(--yel);box-shadow:0 0 8px rgba(255,230,0,.2)}50%{border-color:var(--red);box-shadow:0 0 12px rgba(255,26,26,.3)}}
+
+/* Particles */
+.entry-particle{position:absolute;width:2px;height:2px;background:var(--red);border-radius:50%;opacity:0;animation:particle-float linear infinite;z-index:0}
+@keyframes particle-float{0%{opacity:0;transform:translateY(0) scale(0)}10%{opacity:.8}90%{opacity:.4}100%{opacity:0;transform:translateY(-100vh) scale(1.5)}}
+
+/* ═══════════════════════════════════════════════════
+   MAIN ROOM CONTENT
+   ═══════════════════════════════════════════════════ */
+.room-container{margin-top:var(--nav-h);padding:0 24px 60px;max-width:1100px;margin-left:auto;margin-right:auto;opacity:0;transform:translateY(30px);transition:all .8s cubic-bezier(.4,0,.2,1)}
+.room-container.visible{opacity:1;transform:none}
+
+/* Room Header */
+.room-header{padding:32px 0 24px;border-bottom:1px solid var(--border);margin-bottom:32px}
+.room-header-top{display:flex;align-items:center;gap:16px;margin-bottom:16px;flex-wrap:wrap}
+.room-back{font-family:"Press Start 2P",monospace;font-size:9px;color:var(--red);background:transparent;border:1px solid var(--red-dim);padding:8px 14px;cursor:pointer;border-radius:4px;transition:all .2s;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.room-back:hover{border-color:var(--red);background:rgba(255,26,26,.08);box-shadow:0 0 12px var(--red-glow)}
+.room-badge{font-family:"Press Start 2P",monospace;font-size:14px;color:var(--red);background:rgba(255,26,26,.08);border:1px solid var(--red);padding:6px 14px;border-radius:4px;letter-spacing:2px}
+.room-title-text{font-family:"Press Start 2P",monospace;font-size:clamp(14px,3vw,22px);color:var(--yel);text-shadow:0 0 12px rgba(255,230,0,.3)}
+.room-domain-tag{font-size:11px;color:var(--cyan);background:rgba(0,240,255,.06);border:1px solid var(--cyan-dim);padding:4px 10px;border-radius:3px;letter-spacing:1px}
+
+/* Incident Log */
+.incident-log{background:linear-gradient(135deg,#0a0004,#0c0010);border:1px solid var(--border);border-left:4px solid var(--red);border-radius:0 6px 6px 0;padding:20px 24px;margin-bottom:32px;position:relative;overflow:hidden}
+.incident-log::before{content:"";position:absolute;top:0;left:0;width:100%;height:100%;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(255,26,26,.02) 2px,rgba(255,26,26,.02) 4px);pointer-events:none}
+.incident-log-header{font-family:"Press Start 2P",monospace;font-size:9px;color:var(--red);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.incident-log-header::before{content:"◉";animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.incident-log blockquote{border:none;padding:0;color:var(--ink);font-style:italic;font-size:13px;line-height:1.8}
+.incident-log blockquote strong{color:var(--yel);font-style:normal}
+
+/* Story Context */
+.story-block{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:20px 24px;margin-bottom:32px;line-height:1.8;color:var(--ink-dim)}
+.story-block code{background:#000;padding:3px 8px;border-radius:3px;color:var(--green);font-family:"JetBrains Mono",monospace;font-size:12px}
+.story-block .threat-msg{display:block;text-align:center;padding:16px;margin:16px 0;background:#080004;border:1px solid var(--red-dim);color:var(--red);font-family:"Press Start 2P",monospace;font-size:11px;letter-spacing:2px;line-height:2;text-shadow:0 0 8px rgba(255,26,26,.3)}
+
+/* ═══ Challenge Cards ═══ */
+.challenges-grid{display:flex;flex-direction:column;gap:20px}
+
+.challenge-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;transition:all .3s;position:relative}
+.challenge-card:hover{border-color:rgba(0,240,255,.3);box-shadow:0 0 20px rgba(0,240,255,.05)}
+.challenge-card.solved{border-color:var(--green-dim)}
+.challenge-card.solved .cc-status{background:var(--green);box-shadow:0 0 8px rgba(0,255,106,.4)}
+.challenge-card.solved .cc-points{color:var(--green)}
+
+.cc-header{display:flex;align-items:center;gap:14px;padding:16px 20px;cursor:pointer;user-select:none;transition:background .2s}
+.cc-header:hover{background:rgba(255,26,26,.03)}
+.cc-status{width:10px;height:10px;border-radius:50%;background:var(--red-dim);flex-shrink:0;transition:all .3s}
+.cc-number{font-family:"Press Start 2P",monospace;font-size:10px;color:var(--red);flex-shrink:0}
+.cc-title{flex:1;font-size:13px;color:var(--ink);font-weight:700}
+.cc-domain{font-size:10px;color:var(--cyan-dim);background:rgba(0,240,255,.04);padding:3px 8px;border-radius:3px;flex-shrink:0}
+.cc-points{font-family:"Press Start 2P",monospace;font-size:9px;color:var(--yel);flex-shrink:0}
+.cc-chevron{color:var(--ink-dim);font-size:14px;transition:transform .3s;flex-shrink:0}
+.challenge-card.open .cc-chevron{transform:rotate(180deg)}
+
+.cc-body{max-height:0;overflow:hidden;transition:max-height .5s cubic-bezier(.4,0,.2,1)}
+.challenge-card.open .cc-body{max-height:4000px}
+
+.cc-content{padding:0 20px 20px;border-top:1px solid var(--border)}
+
+/* Briefing */
+.cc-briefing{padding:16px;background:rgba(255,230,0,.02);border:1px solid rgba(255,230,0,.1);border-radius:4px;margin:16px 0;color:var(--ink);line-height:1.8;font-size:12px}
+.cc-briefing-label{font-family:"Press Start 2P",monospace;font-size:8px;color:var(--yel);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.cc-briefing-label::before{content:"▸"}
+
+/* Task */
+.cc-task{padding:12px 16px;background:rgba(0,240,255,.02);border-left:3px solid var(--cyan);margin:12px 0;font-size:12px;color:var(--ink);line-height:1.7}
+.cc-task-label{font-family:"Press Start 2P",monospace;font-size:8px;color:var(--cyan);margin-bottom:6px}
+
+/* Evidence Viewer */
+.evidence-section{margin:16px 0}
+.evidence-label{font-family:"Press Start 2P",monospace;font-size:8px;color:var(--purple);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.evidence-label::before{content:"◈"}
+.evidence-tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px}
+.evidence-tab{font-size:10px;padding:6px 12px;border:1px solid var(--border);border-radius:4px 4px 0 0;background:transparent;color:var(--ink-dim);cursor:pointer;transition:all .2s;font-family:"JetBrains Mono",monospace}
+.evidence-tab:hover{color:var(--cyan);border-color:var(--cyan-dim)}
+.evidence-tab.active{color:var(--cyan);border-color:var(--cyan);background:rgba(0,240,255,.05);border-bottom-color:transparent}
+.evidence-viewer{border:1px solid var(--border);border-radius:0 4px 4px 4px;background:#000;min-height:200px;position:relative;overflow:hidden}
+.evidence-viewer iframe{width:100%;height:400px;border:none;background:#0a0a0f}
+.evidence-viewer .ev-meta{padding:16px;font-size:11px;color:var(--ink-dim);line-height:2}
+.evidence-viewer .ev-meta .key{color:var(--cyan);font-weight:700}
+.evidence-viewer .ev-meta .val{color:var(--ink)}
+.evidence-viewer .ev-meta .suspicious{color:#ff6b6b;font-weight:700}
+
+/* Hints System */
+.hints-section{margin:16px 0}
+.hints-label{font-family:"Press Start 2P",monospace;font-size:8px;color:var(--yel-dim);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.hints-label::before{content:"?"}
+.hint-btn{font-size:10px;padding:6px 14px;border:1px solid var(--yel-dim);border-radius:4px;background:transparent;color:var(--yel-dim);cursor:pointer;transition:all .2s;font-family:"JetBrains Mono",monospace;margin-right:6px;margin-bottom:6px}
+.hint-btn:hover{border-color:var(--yel);color:var(--yel);background:rgba(255,230,0,.05)}
+.hint-btn.revealed{border-color:var(--yel);color:var(--yel);background:rgba(255,230,0,.08)}
+.hint-btn.locked{opacity:.5;cursor:default}
+.hint-text{padding:10px 14px;background:rgba(255,230,0,.03);border:1px solid rgba(255,230,0,.1);border-radius:4px;margin-top:8px;font-size:11px;color:var(--yel-dim);line-height:1.7;display:none}
+.hint-text.visible{display:block;animation:fade-up .4s ease}
+
+/* Flag Submission */
+.flag-section{margin-top:20px;padding:16px;background:#08000a;border:1px solid var(--border);border-radius:6px}
+.flag-label{font-family:"Press Start 2P",monospace;font-size:9px;color:var(--yel);margin-bottom:12px}
+.flag-row{display:flex;gap:8px}
+.flag-input{flex:1;padding:10px 14px;background:#000;border:1px solid var(--border);color:var(--cyan);font-family:"JetBrains Mono",monospace;font-size:12px;border-radius:4px;outline:none;transition:all .2s}
+.flag-input:focus{border-color:var(--cyan);box-shadow:0 0 12px rgba(0,240,255,.15)}
+.flag-input::placeholder{color:var(--ink-dim)}
+.flag-submit{font-family:"Press Start 2P",monospace;font-size:9px;color:#000;background:var(--yel);border:none;padding:10px 20px;cursor:pointer;border-radius:4px;transition:all .2s;white-space:nowrap}
+.flag-submit:hover{box-shadow:0 0 16px rgba(255,230,0,.4);transform:translateY(-1px)}
+.flag-result{margin-top:8px;font-size:11px;min-height:18px}
+.flag-result.success{color:var(--green);text-shadow:0 0 8px var(--green)}
+.flag-result.error{color:var(--red);text-shadow:0 0 8px var(--red)}
+
+/* Narrative Reward */
+.narrative-reward{padding:16px;background:rgba(0,255,106,.03);border:1px solid var(--green-dim);border-radius:4px;margin-top:12px;display:none}
+.narrative-reward.visible{display:block;animation:fade-up .5s ease}
+.narrative-reward-label{font-family:"Press Start 2P",monospace;font-size:8px;color:var(--green);margin-bottom:8px}
+.narrative-reward p{font-size:12px;color:var(--ink);line-height:1.8}
+.narrative-reward strong{color:var(--yel)}
+.narrative-reward em{color:var(--cyan);font-style:normal}
+
+/* Room Transition */
+.room-transition{display:none;padding:32px;background:linear-gradient(135deg,#0a0004,#04000a);border:2px solid var(--red);border-radius:8px;margin-top:32px;text-align:center}
+.room-transition.visible{display:block;animation:fade-up .8s ease}
+.room-transition .rt-header{font-family:"Press Start 2P",monospace;font-size:9px;color:var(--red);margin-bottom:16px;animation:pulse 2s infinite}
+.room-transition blockquote{border:none;padding:0;color:var(--ink);font-style:italic;font-size:12px;line-height:2;max-width:600px;margin:0 auto}
+.room-transition blockquote strong{color:var(--yel);font-style:normal}
+.room-transition blockquote code{background:#000;padding:2px 6px;border-radius:3px;color:var(--cyan);font-family:"JetBrains Mono",monospace}
+.room-transition .rt-next{font-family:"Press Start 2P",monospace;font-size:10px;color:var(--cyan);margin-top:20px;padding:10px 24px;border:2px solid var(--cyan);background:transparent;cursor:pointer;border-radius:4px;transition:all .2s;display:inline-block;text-decoration:none}
+.room-transition .rt-next:hover{background:rgba(0,240,255,.1);box-shadow:0 0 20px rgba(0,240,255,.2)}
+
+/* Progress Bar */
+.room-progress{display:flex;align-items:center;gap:12px;padding:20px 0;margin-bottom:12px}
+.rp-label{font-family:"Press Start 2P",monospace;font-size:8px;color:var(--ink-dim)}
+.rp-bar{flex:1;height:6px;background:rgba(255,26,26,.1);border-radius:3px;border:1px solid var(--border);overflow:hidden}
+.rp-fill{height:100%;background:linear-gradient(90deg,var(--red),var(--yel));border-radius:2px;transition:width .6s cubic-bezier(.4,0,.2,1);width:0%}
+.rp-count{font-family:"Press Start 2P",monospace;font-size:9px;color:var(--yel)}
+
+/* Responsive */
+@media(max-width:700px){
+.cc-header{flex-wrap:wrap;gap:8px}
+.cc-domain{display:none}
+.flag-row{flex-direction:column}
+.room-header-top{flex-direction:column;align-items:flex-start}
+.evidence-viewer iframe{height:300px}
+}
+</style></head>
+<body>
+
+<!-- ═══ Top Navigation ═══ -->
+<nav class="nav">
+    <div class="nav-brand">
+        <h1>NIGHTJAR <span>R-01</span></h1>
+    </div>
+    <div class="nav-sep"></div>
+    <div class="nav-links">
+        <a href="/hub" class="nav-link">◂ HUB</a>
+        <a href="/scoreboard" class="nav-link">◉ SCOREBOARD</a>
+    </div>
+    <div class="nav-spacer"></div>
+    <div class="nav-timer" id="nav-timer">23:17:00<small>NEXUS OFFLINE</small></div>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════
+     ENTRY SEQUENCE
+     ═══════════════════════════════════════════════════ -->
+<div id="entry-overlay">
+    <canvas id="signal-canvas"></canvas>
+    <div class="entry-scanline"></div>
+    <div class="entry-room-id">ROOM 01</div>
+    <div class="entry-room-name">THE EMPTY SIGNAL</div>
+    <div class="entry-domain">OSINT // RECONNAISSANCE // SOURCE VERIFICATION</div>
+    <div class="entry-briefing">
+        <em>NEXUS is offline.</em> We have no breach, no attacker, and no reason for this message.<br>
+        Find the <em>first person who knew it was coming.</em>
+    </div>
+    <button class="entry-proceed" id="entry-proceed" onclick="enterRoom()">▸ JACK IN</button>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     MAIN ROOM CONTENT
+     ═══════════════════════════════════════════════════ -->
+<div class="room-container" id="room-container">
+
+    <!-- Room Header -->
+    <div class="room-header">
+        <div class="room-header-top">
+            <a href="/hub" class="room-back">◂ RETURN TO HUB</a>
+            <span class="room-badge">R—01</span>
+            <span class="room-title-text">The Empty Signal</span>
+            <span class="room-domain-tag">OSINT / Recon / Source Verification</span>
+        </div>
+        <div class="room-progress">
+            <span class="rp-label">ROOM PROGRESS</span>
+            <div class="rp-bar"><div class="rp-fill" id="rp-fill"></div></div>
+            <span class="rp-count" id="rp-count">0 / 4</span>
+        </div>
+    </div>
+
+    <!-- Incident Log -->
+    <div class="incident-log">
+        <div class="incident-log-header">INCIDENT LOG // 23:17 IST</div>
+        <blockquote>
+            "NEXUS is offline. We have no breach, no attacker, and no reason for this message. Find the first person who knew it was coming."<br>
+            — <strong>Commander Ila Sen</strong>, Incident Commander
+        </blockquote>
+    </div>
+
+    <!-- Story Context -->
+    <div class="story-block">
+        At 23:17, every display connected to the Meraz NEXUS festival platform went dark. When they came back — seven seconds later — the screens showed a message that no administrator had written:
+        <div class="threat-msg">
+            THE SHOW MUST NOT CONTINUE<br>
+            WE ARE NOT THE FIRST
+        </div>
+        The festival's digital noticeboard has been replaced. Every page looks official. Every page was modified before anyone on the SPECTRE team knew something was wrong.<br><br>
+        Your mission: Inspect the public-facing festival pages, their metadata, and the digital trail they left behind. <strong style="color:var(--yel)">Someone prepared for this breach months in advance.</strong> Find them.
+    </div>
+
+    <!-- ═══ Challenge Cards ═══ -->
+    <div class="challenges-grid" id="challenges-grid">
+
+        <!-- ── Challenge 1.1 ── -->
+        <div class="challenge-card" id="ch-1" data-challenge="1">
+            <div class="cc-header" onclick="toggleChallenge(1)">
+                <div class="cc-status" id="ch-1-status"></div>
+                <span class="cc-number">1.1</span>
+                <span class="cc-title">The Page That Should Not Exist</span>
+                <span class="cc-domain">OSINT</span>
+                <span class="cc-points" id="ch-1-pts">25 PTS</span>
+                <span class="cc-chevron">▾</span>
+            </div>
+            <div class="cc-body">
+                <div class="cc-content">
+                    <div class="cc-briefing">
+                        <div class="cc-briefing-label">MISSION BRIEFING</div>
+                        The Meraz public portal hosts the usual festival pages — schedule, venue map, sponsor list, volunteer info. But Rhea's automated audit flagged a page that was never approved by the festival committee. It lives at a path that doesn't match anything in the content management system. Find it.
+                    </div>
+                    <div class="cc-task">
+                        <div class="cc-task-label">TASK</div>
+                        Inspect the Meraz festival hub page and identify the hidden page. Examine its contents. The page title, creation date, and a specific phrase inside it are your evidence.
+                    </div>
+
+                    <!-- Evidence -->
+                    <div class="evidence-section">
+                        <div class="evidence-label">EVIDENCE FILES</div>
+                        <div class="evidence-tabs">
+                            <button class="evidence-tab active" onclick="showEvidence(1,'hub')">meraz_festival_hub.html</button>
+                            <button class="evidence-tab" onclick="showEvidence(1,'aether')">aether_07.html</button>
+                        </div>
+                        <div class="evidence-viewer" id="ev-1">
+                            <iframe src="/challenges/Room - 1/evidence/meraz_festival_hub.html" id="ev-1-frame"></iframe>
+                        </div>
+                    </div>
+
+                    <!-- Hints -->
+                    <div class="hints-section">
+                        <div class="hints-label">INTELLIGENCE HINTS</div>
+                        <button class="hint-btn" onclick="revealHint(1,1)">Hint 1</button>
+                        <button class="hint-btn locked" id="hint-1-2-btn" onclick="revealHint(1,2)">Hint 2</button>
+                        <button class="hint-btn locked" id="hint-1-3-btn" onclick="revealHint(1,3)">Hint 3</button>
+                        <div class="hint-text" id="hint-1-1">"Not every link is visible. The page exists, but it was never meant to be found through navigation."</div>
+                        <div class="hint-text" id="hint-1-2">"Inspect the HTML source of the festival hub. Look for commented-out links or hidden elements."</div>
+                        <div class="hint-text" id="hint-1-3">"Search the page source for 'aether'. The hidden link points to a page with a message from the future."</div>
+                    </div>
+
+                    <!-- Flag -->
+                    <div class="flag-section">
+                        <div class="flag-label">SUBMIT FLAG</div>
+                        <div class="flag-row">
+                            <input type="text" class="flag-input" id="flag-1" placeholder="NIGHTJAR{...}">
+                            <button class="flag-submit" onclick="submitChallengeFlag(1)">SUBMIT</button>
+                        </div>
+                        <div class="flag-result" id="flag-result-1"></div>
+                    </div>
+
+                    <div class="narrative-reward" id="reward-1">
+                        <div class="narrative-reward-label">◈ INTEL UNLOCKED</div>
+                        <p>The hidden page is titled <strong>AETHER/07</strong>. It contains a single sentence that will later appear in MIRA-7's configuration: <em>"Nothing stays local."</em> This phrase was planted months before the incident — proof that someone was preparing.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Challenge 1.2 ── -->
+        <div class="challenge-card" id="ch-2" data-challenge="2">
+            <div class="cc-header" onclick="toggleChallenge(2)">
+                <div class="cc-status" id="ch-2-status"></div>
+                <span class="cc-number">1.2</span>
+                <span class="cc-title">A Name in the Metadata</span>
+                <span class="cc-domain">FILE ANALYSIS</span>
+                <span class="cc-points" id="ch-2-pts">25 PTS</span>
+                <span class="cc-chevron">▾</span>
+            </div>
+            <div class="cc-body">
+                <div class="cc-content">
+                    <div class="cc-briefing">
+                        <div class="cc-briefing-label">MISSION BRIEFING</div>
+                        The festival schedule was distributed as a PDF, and the banner image was uploaded to every NEXUS-connected display two weeks before the event. These files were approved by the organising committee — but the committee didn't create them. Someone else did. Their name is still in the metadata.
+                    </div>
+                    <div class="cc-task">
+                        <div class="cc-task-label">TASK</div>
+                        Download and examine the festival schedule PDF and the banner image. Extract the hidden author name, creator tool, or organization from their metadata fields.
+                    </div>
+
+                    <!-- Evidence -->
+                    <div class="evidence-section">
+                        <div class="evidence-label">EVIDENCE FILES</div>
+                        <div class="evidence-tabs">
+                            <button class="evidence-tab active" onclick="showEvidence(2,'pdf')">meraz_schedule_2026.pdf</button>
+                            <button class="evidence-tab" onclick="showEvidence(2,'png')">nexus_banner_final.png</button>
+                        </div>
+                        <div class="evidence-viewer" id="ev-2">
+                            <iframe src="/challenges/Room - 1/evidence/meraz_schedule_2026.pdf" id="ev-2-frame"></iframe>
+                        </div>
+                    </div>
+
+                    <!-- Hints -->
+                    <div class="hints-section">
+                        <div class="hints-label">INTELLIGENCE HINTS</div>
+                        <button class="hint-btn" onclick="revealHint(2,1)">Hint 1</button>
+                        <button class="hint-btn locked" id="hint-2-2-btn" onclick="revealHint(2,2)">Hint 2</button>
+                        <button class="hint-btn locked" id="hint-2-3-btn" onclick="revealHint(2,3)">Hint 3</button>
+                        <div class="hint-text" id="hint-2-1">"The story is in the file, not the filename. Look deeper than the content."</div>
+                        <div class="hint-text" id="hint-2-2">"Use an EXIF viewer on the image. Use a PDF metadata reader on the schedule. Look for Author, Creator, and Producer fields."</div>
+                        <div class="hint-text" id="hint-2-3">"The PDF author contains a name and an organisation separated by '//'. The organisation is not real."</div>
+                    </div>
+
+                    <!-- Flag -->
+                    <div class="flag-section">
+                        <div class="flag-label">SUBMIT FLAG</div>
+                        <div class="flag-row">
+                            <input type="text" class="flag-input" id="flag-2" placeholder="NIGHTJAR{...}">
+                            <button class="flag-submit" onclick="submitChallengeFlag(2)">SUBMIT</button>
+                        </div>
+                        <div class="flag-result" id="flag-result-2"></div>
+                    </div>
+
+                    <div class="narrative-reward" id="reward-2">
+                        <div class="narrative-reward-label">◈ INTEL UNLOCKED</div>
+                        <p>The PDF's author field reads <strong>Aman V. // Parallax Systems</strong>. The banner image's EXIF data contains GPS coordinates pointing to a fictional research lab and a creator tool called <em>AetherForge v2.1</em>. <strong>Parallax Systems</strong> is a nonexistent research group — but the name will appear again in Room 8 when the malware sample is analysed.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Challenge 1.3 ── -->
+        <div class="challenge-card" id="ch-3" data-challenge="3">
+            <div class="cc-header" onclick="toggleChallenge(3)">
+                <div class="cc-status" id="ch-3-status"></div>
+                <span class="cc-number">1.3</span>
+                <span class="cc-title">The False Official</span>
+                <span class="cc-domain">SOURCE VALIDATION</span>
+                <span class="cc-points" id="ch-3-pts">25 PTS</span>
+                <span class="cc-chevron">▾</span>
+            </div>
+            <div class="cc-body">
+                <div class="cc-content">
+                    <div class="cc-briefing">
+                        <div class="cc-briefing-label">MISSION BRIEFING</div>
+                        Two versions of the NEXUS status page exist. One is the real system page maintained by Rhea's engineering team. The other appeared three days ago and has been silently redirecting volunteer queries. They look almost identical. <em style="color:var(--red);">Almost.</em>
+                    </div>
+                    <div class="cc-task">
+                        <div class="cc-task-label">TASK</div>
+                        Compare the official NEXUS page with the mirror page. Identify the specific discrepancies that reveal which page is the impersonation: domain inconsistencies, certificate differences, subtle text changes, and a hidden redirect.
+                    </div>
+
+                    <!-- Evidence -->
+                    <div class="evidence-section">
+                        <div class="evidence-label">EVIDENCE FILES</div>
+                        <div class="evidence-tabs">
+                            <button class="evidence-tab active" onclick="showEvidence(3,'official')">nexus_official_page.html</button>
+                            <button class="evidence-tab" onclick="showEvidence(3,'mirror')">nexus_mirror_page.html</button>
+                        </div>
+                        <div class="evidence-viewer" id="ev-3">
+                            <iframe src="/challenges/Room - 1/evidence/nexus_official_page.html" id="ev-3-frame"></iframe>
+                        </div>
+                    </div>
+
+                    <!-- Hints -->
+                    <div class="hints-section">
+                        <div class="hints-label">INTELLIGENCE HINTS</div>
+                        <button class="hint-btn" onclick="revealHint(3,1)">Hint 1</button>
+                        <button class="hint-btn locked" id="hint-3-2-btn" onclick="revealHint(3,2)">Hint 2</button>
+                        <button class="hint-btn locked" id="hint-3-3-btn" onclick="revealHint(3,3)">Hint 3</button>
+                        <div class="hint-text" id="hint-3-1">"Official pages and their copies differ in small but critical ways. Compare everything, not just the text."</div>
+                        <div class="hint-text" id="hint-3-2">"Check the page's &lt;meta&gt; tags, link href values, and any embedded scripts. One page has something the other doesn't."</div>
+                        <div class="hint-text" id="hint-3-3">"Look at the domain in the mirror page's &lt;base&gt; tag and SSL certificate comment. The domain ends in .in.net, not .in."</div>
+                    </div>
+
+                    <!-- Flag -->
+                    <div class="flag-section">
+                        <div class="flag-label">SUBMIT FLAG</div>
+                        <div class="flag-row">
+                            <input type="text" class="flag-input" id="flag-3" placeholder="NIGHTJAR{...}">
+                            <button class="flag-submit" onclick="submitChallengeFlag(3)">SUBMIT</button>
+                        </div>
+                        <div class="flag-result" id="flag-result-3"></div>
+                    </div>
+
+                    <div class="narrative-reward" id="reward-3">
+                        <div class="narrative-reward-label">◈ INTEL UNLOCKED</div>
+                        <p>The mirror was registered under the domain <strong>nexus-meraz.festival.in.net</strong> — close enough to look legitimate, different enough to be a separate server entirely. The mirror's SSL certificate was issued by <em>Parallax CA</em> (not a real certificate authority). The page also contains a 1-pixel tracking beacon that reports to an external endpoint. This is the Curator's reconnaissance infrastructure — built to watch who visits before the attack begins.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Challenge 1.4 ── -->
+        <div class="challenge-card" id="ch-4" data-challenge="4">
+            <div class="cc-header" onclick="toggleChallenge(4)">
+                <div class="cc-status" id="ch-4-status"></div>
+                <span class="cc-number">1.4</span>
+                <span class="cc-title">The Quiet Profile</span>
+                <span class="cc-domain">CROSS-REFERENCING</span>
+                <span class="cc-points" id="ch-4-pts">25 PTS</span>
+                <span class="cc-chevron">▾</span>
+            </div>
+            <div class="cc-body">
+                <div class="cc-content">
+                    <div class="cc-briefing">
+                        <div class="cc-briefing-label">MISSION BRIEFING</div>
+                        The Curator didn't appear from nowhere. Somewhere in the festival's digital footprint — the volunteer forum, the tech blog, the contributor credits — there is a profile that was created months before the incident, posted exactly once, and has been watching ever since. Find the operator's public handle.
+                    </div>
+                    <div class="cc-task">
+                        <div class="cc-task-label">TASK</div>
+                        Search the contained OSINT archive. Cross-reference usernames, creation dates, posting patterns, and profile details across the provided social profiles. Identify the account that belongs to the anonymous operator behind the breach preparation.
+                    </div>
+
+                    <!-- Evidence -->
+                    <div class="evidence-section">
+                        <div class="evidence-label">EVIDENCE FILES</div>
+                        <div class="evidence-tabs">
+                            <button class="evidence-tab active" onclick="showEvidence(4,'forum')">forum_members.html</button>
+                            <button class="evidence-tab" onclick="showEvidence(4,'blog')">tech_blog.html</button>
+                        </div>
+                        <div class="evidence-viewer" id="ev-4">
+                            <iframe src="/challenges/Room - 1/evidence/osint_archive/forum_members.html" id="ev-4-frame"></iframe>
+                        </div>
+                    </div>
+
+                    <!-- Hints -->
+                    <div class="hints-section">
+                        <div class="hints-label">INTELLIGENCE HINTS</div>
+                        <button class="hint-btn" onclick="revealHint(4,1)">Hint 1</button>
+                        <button class="hint-btn locked" id="hint-4-2-btn" onclick="revealHint(4,2)">Hint 2</button>
+                        <button class="hint-btn locked" id="hint-4-3-btn" onclick="revealHint(4,3)">Hint 3</button>
+                        <div class="hint-text" id="hint-4-1">"The operator has been here longer than you think. Look for accounts that are old but silent."</div>
+                        <div class="hint-text" id="hint-4-2">"Cross-reference profile creation dates with posting activity. The quietest account with the oldest date is suspicious."</div>
+                        <div class="hint-text" id="hint-4-3">"The handle contains 'curator' and a number. Check the forum profiles for a nightjar bird avatar."</div>
+                    </div>
+
+                    <!-- Flag -->
+                    <div class="flag-section">
+                        <div class="flag-label">SUBMIT FLAG</div>
+                        <div class="flag-row">
+                            <input type="text" class="flag-input" id="flag-4" placeholder="NIGHTJAR{...}">
+                            <button class="flag-submit" onclick="submitChallengeFlag(4)">SUBMIT</button>
+                        </div>
+                        <div class="flag-result" id="flag-result-4"></div>
+                    </div>
+
+                    <div class="narrative-reward" id="reward-4">
+                        <div class="narrative-reward-label">◈ INTEL UNLOCKED</div>
+                        <p>The profile <strong>curator_404</strong> was created on the Meraz volunteer forum exactly 147 days before the incident. It posted a single message: <em>"Looking forward to the show. I hope the systems hold."</em> The account's avatar is a nightjar bird silhouette. The email domain on the profile points back to <strong>parallax-sys.net</strong>. This is the Curator — <strong>Aman Vyas</strong> — who has been watching the festival's infrastructure since before anyone knew there was something to watch.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- /challenges-grid -->
+
+    <!-- Room Transition -->
+    <div class="room-transition" id="room-transition">
+        <div class="rt-header">NEXUS RELAY LOG // 23:41 IST</div>
+        <blockquote>
+            <code>curator_404</code> has sent a direct message to <strong>KABIR "KITE" MEHRA</strong>, the Festival Technical Lead:<br><br>
+            <em style="color:var(--cyan)">"Kite — restore the old route. The one Rhea disabled. You know which one. The festival depends on it."</em><br><br>
+            The portal displays a cipher capsule — an encrypted package attached to the message. It cannot be opened here.
+        </blockquote>
+        <a href="/hub" class="rt-next">▸ PROCEED TO ROOM 2</a>
+    </div>
+
+</div><!-- /room-container -->
+
+<script>
+/* ═══════════════════════════════════════════════════
+   ENTRY SEQUENCE ANIMATION
+   ═══════════════════════════════════════════════════ */
+const sigCanvas = document.getElementById('signal-canvas');
+const sigCtx = sigCanvas.getContext('2d');
+let animFrame;
+
+function resizeSignalCanvas() {
+    sigCanvas.width = window.innerWidth;
+    sigCanvas.height = window.innerHeight;
+}
+resizeSignalCanvas();
+window.addEventListener('resize', resizeSignalCanvas);
+
+// Animated signal waveform
+let sigPhase = 0;
+function drawSignal() {
+    const w = sigCanvas.width, h = sigCanvas.height;
+    sigCtx.fillStyle = 'rgba(2,0,5,.15)';
+    sigCtx.fillRect(0, 0, w, h);
+    
+    // Multiple waveforms
+    const waves = [
+        { amp: 40, freq: 0.008, speed: 0.03, color: 'rgba(255,26,26,.4)', y: h * 0.35 },
+        { amp: 25, freq: 0.012, speed: -0.02, color: 'rgba(0,240,255,.25)', y: h * 0.5 },
+        { amp: 60, freq: 0.005, speed: 0.015, color: 'rgba(255,230,0,.15)', y: h * 0.65 },
+    ];
+    
+    waves.forEach(wave => {
+        sigCtx.beginPath();
+        sigCtx.strokeStyle = wave.color;
+        sigCtx.lineWidth = 1.5;
+        for (let x = 0; x < w; x += 2) {
+            const distort = Math.random() < 0.01 ? (Math.random() - 0.5) * 80 : 0;
+            const y = wave.y + Math.sin(x * wave.freq + sigPhase * wave.speed) * wave.amp + distort;
+            x === 0 ? sigCtx.moveTo(x, y) : sigCtx.lineTo(x, y);
+        }
+        sigCtx.stroke();
+    });
+    
+    // Static noise
+    for (let i = 0; i < 50; i++) {
+        const x = Math.random() * w;
+        const y = Math.random() * h;
+        const s = Math.random() * 2;
+        sigCtx.fillStyle = `rgba(255,${Math.random() < 0.3 ? '26,26' : '230,0'},${Math.random() * 0.3})`;
+        sigCtx.fillRect(x, y, s, s);
+    }
+    
+    sigPhase++;
+    animFrame = requestAnimationFrame(drawSignal);
+}
+drawSignal();
+
+// Create particles
+const overlay = document.getElementById('entry-overlay');
+for (let i = 0; i < 30; i++) {
+    const p = document.createElement('div');
+    p.className = 'entry-particle';
+    p.style.left = Math.random() * 100 + '%';
+    p.style.bottom = '-10px';
+    p.style.animationDuration = (3 + Math.random() * 5) + 's';
+    p.style.animationDelay = Math.random() * 5 + 's';
+    p.style.width = p.style.height = (1 + Math.random() * 2) + 'px';
+    overlay.appendChild(p);
+}
+
+// Skip entry if already seen
+const entryKey = 'nj_room1_entry';
+if (sessionStorage.getItem(entryKey) === '1') {
+    document.getElementById('entry-overlay').classList.add('hidden');
+    document.getElementById('room-container').classList.add('visible');
+    cancelAnimationFrame(animFrame);
+}
+
+function enterRoom() {
+    sessionStorage.setItem(entryKey, '1');
+    const ov = document.getElementById('entry-overlay');
+    ov.classList.add('fade-out');
+    cancelAnimationFrame(animFrame);
+    setTimeout(() => {
+        ov.classList.add('hidden');
+        document.getElementById('room-container').classList.add('visible');
+    }, 1000);
+}
+
+// Also allow Enter key to proceed
+document.addEventListener('keydown', (e) => {
+    if (e.code === 'Enter' || e.code === 'Space') {
+        const ov = document.getElementById('entry-overlay');
+        if (!ov.classList.contains('hidden')) {
+            enterRoom();
+        }
+    }
+});
+
+/* ═══════════════════════════════════════════════════
+   CHALLENGE MANAGEMENT
+   ═══════════════════════════════════════════════════ */
+const solved = [false, false, false, false];
+
+// The actual flags from the README
+const FLAGS = {
+    1: 'NIGHTJAR{aether_07_nothing_stays_local}',
+    2: 'NIGHTJAR{parallax_systems_aman_v}',
+    3: 'NIGHTJAR{nexus-meraz.festival.in.net}',
+    4: 'NIGHTJAR{curator_404}'
+};
+
+function toggleChallenge(n) {
+    const card = document.getElementById('ch-' + n);
+    card.classList.toggle('open');
+}
+
+function showEvidence(challenge, tab) {
+    const frame = document.getElementById('ev-' + challenge + '-frame');
+    const viewer = document.getElementById('ev-' + challenge);
+    
+    // Update tabs
+    const tabs = viewer.previousElementSibling.querySelectorAll('.evidence-tab');
+    tabs.forEach(t => t.classList.remove('active'));
+    event.target.classList.add('active');
+    
+    const paths = {
+        // Challenge 1
+        'hub': '/challenges/Room - 1/evidence/meraz_festival_hub.html',
+        'aether': '/challenges/Room - 1/evidence/aether_07.html',
+        // Challenge 2
+        'pdf': '/challenges/Room - 1/evidence/meraz_schedule_2026.pdf',
+        'png': '/challenges/Room - 1/evidence/nexus_banner_final.png',
+        // Challenge 3
+        'official': '/challenges/Room - 1/evidence/nexus_official_page.html',
+        'mirror': '/challenges/Room - 1/evidence/nexus_mirror_page.html',
+        // Challenge 4
+        'forum': '/challenges/Room - 1/evidence/osint_archive/forum_members.html',
+        'blog': '/challenges/Room - 1/evidence/osint_archive/tech_blog.html'
+    };
+    
+    if (tab === 'png') {
+        // Show image with metadata
+        viewer.innerHTML = `
+            <div style="text-align:center;padding:20px;background:#000">
+                <img src="${paths[tab]}" style="max-width:100%;max-height:350px;border:1px solid var(--border);border-radius:4px" alt="NEXUS Banner">
+                <div class="ev-meta" style="text-align:left;margin-top:12px">
+                    <div><span class="key">File:</span> <span class="val">nexus_banner_final.png</span></div>
+                    <div><span class="key">Creator Tool:</span> <span class="suspicious">AetherForge v2.1</span></div>
+                    <div><span class="key">GPS Lat:</span> <span class="suspicious">21.1833° N</span></div>
+                    <div><span class="key">GPS Lon:</span> <span class="suspicious">81.3939° E</span></div>
+                    <div><span class="key">Organization:</span> <span class="suspicious">Parallax Systems — Research</span></div>
+                    <div><span class="key">Author:</span> <span class="suspicious">Aman V.</span></div>
+                    <div><span class="key">Project Tag:</span> <span class="suspicious">NIGHTJAR</span></div>
+                </div>
+            </div>`;
+    } else {
+        viewer.innerHTML = `<iframe src="${paths[tab]}" id="ev-${challenge}-frame" style="width:100%;height:400px;border:none;background:#0a0a0f"></iframe>`;
+    }
+}
+
+/* ═══════════════════════════════════════════════════
+   HINT SYSTEM
+   ═══════════════════════════════════════════════════ */
+const hintsRevealed = {};
+
+function revealHint(challenge, level) {
+    const key = challenge + '-' + level;
+    const btn = document.querySelector(`#hint-${key}-btn`) || event.target;
+    
+    if (btn.classList.contains('locked') && level > 1) {
+        // Check if previous hint is revealed
+        const prevKey = challenge + '-' + (level - 1);
+        if (!hintsRevealed[prevKey]) return;
+    }
+    
+    hintsRevealed[key] = true;
+    
+    // Show hint text
+    const el = document.getElementById('hint-' + key);
+    if (el) {
+        el.classList.add('visible');
+    }
+    
+    // Update button state
+    btn.classList.add('revealed');
+    btn.classList.remove('locked');
+    
+    // Unlock next hint button
+    const nextBtn = document.getElementById(`hint-${challenge}-${level + 1}-btn`);
+    if (nextBtn) {
+        nextBtn.classList.remove('locked');
+    }
+}
+
+/* ═══════════════════════════════════════════════════
+   FLAG SUBMISSION
+   ═══════════════════════════════════════════════════ */
+async function submitChallengeFlag(n) {
+    const input = document.getElementById('flag-' + n);
+    const result = document.getElementById('flag-result-' + n);
+    const flag = input.value.trim();
+    
+    if (!flag) { result.textContent = 'Enter a flag.'; result.className = 'flag-result error'; return; }
+    if (solved[n - 1]) { result.textContent = 'Already solved!'; result.className = 'flag-result success'; return; }
+    
+    result.textContent = 'Verifying...';
+    result.className = 'flag-result';
+    
+    try {
+        const formData = new FormData();
+        formData.append('room_id', 1);
+        formData.append('flag', flag);
+        
+        const r = await fetch('/api/submit_flag', { method: 'POST', body: formData });
+        const data = await r.json();
+        
+        if (data.success) {
+            solved[n - 1] = true;
+            result.textContent = '✓ ' + data.message;
+            result.className = 'flag-result success';
+            
+            // Mark card as solved
+            document.getElementById('ch-' + n).classList.add('solved');
+            document.getElementById('ch-' + n + '-pts').textContent = '✓ 25 PTS';
+            
+            // Show narrative reward
+            document.getElementById('reward-' + n).classList.add('visible');
+            
+            // Update progress
+            updateProgress();
+            
+            // Check if all solved
+            if (solved.every(Boolean)) {
+                setTimeout(() => {
+                    document.getElementById('room-transition').classList.add('visible');
+                    document.getElementById('room-transition').scrollIntoView({ behavior: 'smooth' });
+                }, 1500);
+            }
+        } else {
+            result.textContent = '✗ ' + data.message;
+            result.className = 'flag-result error';
+            // Shake the input
+            input.style.animation = 'none';
+            input.offsetHeight;
+            input.style.animation = 'shake-input .4s ease';
+        }
+    } catch (e) {
+        result.textContent = 'Connection error.';
+        result.className = 'flag-result error';
+    }
+}
+
+// Allow Enter key to submit
+document.querySelectorAll('.flag-input').forEach(input => {
+    input.addEventListener('keydown', e => {
+        if (e.code === 'Enter') {
+            const n = input.id.split('-')[1];
+            submitChallengeFlag(parseInt(n));
+        }
+    });
+});
+
+function updateProgress() {
+    const count = solved.filter(Boolean).length;
+    document.getElementById('rp-fill').style.width = (count / 4 * 100) + '%';
+    document.getElementById('rp-count').textContent = count + ' / 4';
+}
+
+/* ═══════════════════════════════════════════════════
+   TIMER
+   ═══════════════════════════════════════════════════ */
+const t0 = Date.now();
+function updateTimer() {
+    const s = (Date.now() - t0) / 1000 | 0;
+    const str = '23:' + String(17 + (s / 60 | 0)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+    document.getElementById('nav-timer').innerHTML = str + '<small>NEXUS OFFLINE</small>';
+    requestAnimationFrame(updateTimer);
+}
+updateTimer();
+</script>
+
+<style>
+@keyframes shake-input {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+}
+</style>
+
+</body></html>
