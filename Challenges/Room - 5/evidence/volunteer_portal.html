@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meraz Volunteer Portal</title>
+    <style>
+        :root {
+            --bg: #050508;
+            --card: #0a0a12;
+            --card-hover: #0f0f1a;
+            --border: #1a1a2a;
+            --text: #b0b0c0;
+            --muted: #4a4a5a;
+            --cyan: #00e5ff;
+            --amber: #ffab00;
+            --red: #ff4444;
+            --green: #00e676;
+            --violet: #b388ff;
+            --surface: #12121e;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', 'Inter', sans-serif; background: var(--bg); color: var(--text); }
+        
+        /* Navigation */
+        .nav { background: var(--surface); border-bottom: 1px solid var(--border); padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+        .nav-brand { color: var(--cyan); font-weight: bold; font-size: 1.1rem; letter-spacing: 1px; }
+        .nav-links { display: flex; gap: 1.5rem; }
+        .nav-links a { color: var(--muted); text-decoration: none; font-size: 0.85rem; transition: color 0.2s; }
+        .nav-links a:hover { color: var(--cyan); }
+        .nav-links a.active { color: var(--cyan); border-bottom: 2px solid var(--cyan); padding-bottom: 2px; }
+        .nav-user { color: var(--muted); font-size: 0.8rem; }
+        .nav-user span { color: var(--green); }
+
+        /* Main content */
+        .container { max-width: 1000px; margin: 2rem auto; padding: 0 2rem; }
+        
+        /* URL Bar simulation */
+        .url-bar { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 0.6rem 1rem; margin-bottom: 2rem; display: flex; align-items: center; gap: 0.5rem; }
+        .url-bar .lock { color: var(--green); font-size: 0.8rem; }
+        .url-bar .url { color: var(--muted); font-family: 'Consolas', monospace; font-size: 0.8rem; }
+        .url-bar .url .param { color: var(--amber); }
+        .url-bar .url .highlight { color: var(--red); font-weight: bold; }
+
+        /* Profile Card */
+        .profile-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 2rem; }
+        .profile-header { background: linear-gradient(135deg, #0a1628 0%, #0d0d1a 100%); padding: 1.5rem 2rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .profile-header h2 { color: var(--cyan); font-size: 1.1rem; }
+        .badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.7rem; font-weight: bold; }
+        .badge-active { background: rgba(0, 230, 118, 0.15); color: var(--green); border: 1px solid rgba(0, 230, 118, 0.3); }
+        .badge-restricted { background: rgba(255, 68, 68, 0.15); color: var(--red); border: 1px solid rgba(255, 68, 68, 0.3); }
+        .badge-infra { background: rgba(179, 136, 255, 0.15); color: var(--violet); border: 1px solid rgba(179, 136, 255, 0.3); }
+        .profile-body { padding: 1.5rem 2rem; }
+        .profile-field { display: flex; margin-bottom: 0.8rem; }
+        .profile-field .label { width: 180px; color: var(--muted); font-size: 0.85rem; }
+        .profile-field .value { color: var(--text); font-size: 0.85rem; }
+        .profile-field .value.alert { color: var(--red); }
+
+        /* Multiple profiles view */
+        .profiles-grid { display: flex; flex-direction: column; gap: 1.5rem; }
+        
+        /* Tabs */
+        .tabs { display: flex; gap: 0; margin-bottom: 2rem; border-bottom: 1px solid var(--border); }
+        .tab { padding: 0.7rem 1.5rem; color: var(--muted); cursor: pointer; font-size: 0.85rem; border-bottom: 2px solid transparent; transition: all 0.2s; }
+        .tab.active { color: var(--cyan); border-bottom-color: var(--cyan); }
+
+        /* Internal note */
+        .internal-note { background: rgba(255, 68, 68, 0.05); border: 1px solid rgba(255, 68, 68, 0.2); border-radius: 6px; padding: 1rem 1.5rem; margin-top: 1rem; }
+        .internal-note .note-header { color: var(--red); font-size: 0.8rem; font-weight: bold; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 1px; }
+        .internal-note .note-body { color: var(--text); font-size: 0.85rem; line-height: 1.6; }
+
+        /* Section titles */
+        .section-title { color: var(--cyan); font-size: 1rem; margin: 2rem 0 1rem 0; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+        
+        .hint { color: var(--amber); font-size: 0.75rem; font-style: italic; margin-top: 1.5rem; padding: 0.8rem; background: rgba(255, 171, 0, 0.05); border-radius: 4px; border: 1px solid rgba(255, 171, 0, 0.15); }
+        .info { margin-top: 1.5rem; color: var(--muted); font-size: 0.7rem; font-family: 'Consolas', monospace; }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="nav">
+        <div class="nav-brand">MERAZ // VOLUNTEER PORTAL</div>
+        <div class="nav-links">
+            <a href="#">Dashboard</a>
+            <a href="#" class="active">Profiles</a>
+            <a href="#">Schedules</a>
+            <a href="#">Badges</a>
+            <a href="#">Equipment</a>
+            <a href="#">Diagnostics</a>
+        </div>
+        <div class="nav-user">Logged in as: <span>volunteer_demo</span></div>
+    </nav>
+
+    <div class="container">
+        <!-- Current URL -->
+        <h2 class="section-title">Current View — Your Profile</h2>
+        <div class="url-bar">
+            <span class="lock">🔒</span>
+            <span class="url">https://volunteer.nexus-meraz.festival.internal/volunteer/profile?<span class="param">id=42</span></span>
+        </div>
+
+        <!-- Normal volunteer profile -->
+        <div class="profile-card">
+            <div class="profile-header">
+                <h2>Volunteer Profile — #42</h2>
+                <span class="badge badge-active">ACTIVE</span>
+            </div>
+            <div class="profile-body">
+                <div class="profile-field"><span class="label">Name:</span><span class="value">Priya Sharma</span></div>
+                <div class="profile-field"><span class="label">Email:</span><span class="value">priya.s@meraz-volunteer.internal</span></div>
+                <div class="profile-field"><span class="label">Role:</span><span class="value">Stage Crew — Audio</span></div>
+                <div class="profile-field"><span class="label">Badge Level:</span><span class="value">Standard — Venue Access</span></div>
+                <div class="profile-field"><span class="label">Registered:</span><span class="value">2026-09-15</span></div>
+                <div class="profile-field"><span class="label">Orientation:</span><span class="value">Completed — 2026-09-20</span></div>
+                <div class="profile-field"><span class="label">Emergency Contact:</span><span class="value">+91-XXXX-XXX-432</span></div>
+                <div class="profile-field"><span class="label">Shifts Assigned:</span><span class="value">3 (Oct 4–6)</span></div>
+            </div>
+        </div>
+
+        <!-- IDOR demonstration -->
+        <h2 class="section-title">Vulnerability Demonstration — IDOR</h2>
+        <p class="hint">⚠ What happens if you change the profile ID in the URL? The portal does not verify that you are authorised to view other profiles. Try accessing profiles with different IDs — including non-standard formats.</p>
+
+        <div class="url-bar" style="margin-top: 1rem;">
+            <span class="lock">🔒</span>
+            <span class="url">https://volunteer.nexus-meraz.festival.internal/volunteer/profile?<span class="highlight">id=0x7F</span></span>
+        </div>
+
+        <!-- Restricted profile — the IDOR target -->
+        <div class="profile-card" style="border-color: rgba(255, 68, 68, 0.3);">
+            <div class="profile-header" style="background: linear-gradient(135deg, #1a0a0a 0%, #0d0d1a 100%);">
+                <h2 style="color: var(--red);">Volunteer Profile — #0x7F (127)</h2>
+                <div>
+                    <span class="badge badge-restricted">RESTRICTED</span>
+                    <span class="badge badge-infra">INFRASTRUCTURE</span>
+                </div>
+            </div>
+            <div class="profile-body">
+                <div class="profile-field"><span class="label">Name:</span><span class="value alert">NEXUS Infrastructure — Automated</span></div>
+                <div class="profile-field"><span class="label">Email:</span><span class="value alert">nexus-svc@nexus.internal (service account)</span></div>
+                <div class="profile-field"><span class="label">Role:</span><span class="value alert">Infrastructure Access — Full Campus</span></div>
+                <div class="profile-field"><span class="label">Badge Level:</span><span class="value alert">Infrastructure — All Zones + Server Rooms</span></div>
+                <div class="profile-field"><span class="label">Registered:</span><span class="value alert">2026-09-28 (automated API registration)</span></div>
+                <div class="profile-field"><span class="label">Orientation:</span><span class="value alert">NONE — No orientation recorded</span></div>
+                <div class="profile-field"><span class="label">Emergency Contact:</span><span class="value alert">NONE — No contact provided</span></div>
+                <div class="profile-field"><span class="label">Shifts Assigned:</span><span class="value alert">0 (no shifts — permanent access)</span></div>
+                <div class="profile-field"><span class="label">Created By:</span><span class="value alert">nexus-svc-continuity (API — no human sponsor)</span></div>
+                <div class="profile-field"><span class="label">Approved By:</span><span class="value alert">AUTO-APPROVED (no committee review)</span></div>
+
+                <div class="internal-note">
+                    <div class="note-header">⚠ Internal Note — Committee Review Required</div>
+                    <div class="note-body">
+                        Badge provisioned via automated API call. No human sponsor identified. Profile created by service account <code>nexus-svc-continuity</code> on 2026-09-28 at 14:35 IST. Access level: Infrastructure (all zones including server rooms). This profile was never presented to the volunteer committee for approval. The registration bypassed the standard orientation requirement.<br><br>
+                        <strong>Flagged by automated audit:</strong> Profile has infrastructure access but no human identity, no orientation, and no emergency contact. This is inconsistent with all other volunteer profiles in the system.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Other profiles for context -->
+        <h2 class="section-title">Other Accessible Profiles (Sample)</h2>
+        <div class="profiles-grid">
+            <div class="profile-card">
+                <div class="profile-header">
+                    <h2>Volunteer #1 — Kabir "Kite" Mehra</h2>
+                    <span class="badge badge-active">ACTIVE — TECHNICAL LEAD</span>
+                </div>
+                <div class="profile-body">
+                    <div class="profile-field"><span class="label">Role:</span><span class="value">Festival Technical Lead</span></div>
+                    <div class="profile-field"><span class="label">Badge Level:</span><span class="value">Admin — Full Access</span></div>
+                    <div class="profile-field"><span class="label">Registered:</span><span class="value">2026-08-01</span></div>
+                    <div class="profile-field"><span class="label">Orientation:</span><span class="value">Completed — 2026-08-15 (led the session)</span></div>
+                </div>
+            </div>
+
+            <div class="profile-card">
+                <div class="profile-header">
+                    <h2>Volunteer #2 — Rhea D'Souza</h2>
+                    <span class="badge badge-active">ACTIVE — ENGINEERING</span>
+                </div>
+                <div class="profile-body">
+                    <div class="profile-field"><span class="label">Role:</span><span class="value">NEXUS Systems Engineer</span></div>
+                    <div class="profile-field"><span class="label">Badge Level:</span><span class="value">Admin — Tech Zones</span></div>
+                    <div class="profile-field"><span class="label">Registered:</span><span class="value">2026-07-20</span></div>
+                    <div class="profile-field"><span class="label">Orientation:</span><span class="value">Completed — 2026-08-15</span></div>
+                </div>
+            </div>
+        </div>
+
+        <p class="info">Evidence note: The portal does not check if the logged-in user matches the requested profile ID. Any authenticated user can access any profile by modifying the `id` parameter. Profile #0x7F is the IDOR target — a restricted infrastructure profile with no human identity.</p>
+    </div>
+</body>
+</html>

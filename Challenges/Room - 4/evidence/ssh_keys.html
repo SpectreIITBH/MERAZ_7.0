@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AETHER-7 — SSH Authorized Keys</title>
+    <style>
+        :root {
+            --bg: #050508;
+            --card: #0a0a12;
+            --border: #1a1a2a;
+            --text: #b0b0c0;
+            --muted: #4a4a5a;
+            --cyan: #00e5ff;
+            --amber: #ffab00;
+            --red: #ff4444;
+            --green: #00e676;
+            --violet: #b388ff;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Consolas', 'Courier New', monospace; background: var(--bg); color: var(--text); padding: 2rem; font-size: 0.75rem; }
+        h1 { color: var(--cyan); font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 2rem; text-align: center; }
+        .terminal { background: var(--card); padding: 1.5rem; border: 1px solid var(--border); border-radius: 4px; overflow-x: auto; margin-bottom: 2rem; }
+        .prompt { color: var(--green); }
+        .output { white-space: pre-wrap; word-break: break-all; line-height: 1.7; }
+        .legitimate { color: var(--green); }
+        .planted { color: var(--red); background: rgba(255, 68, 68, 0.08); }
+        .section-title { color: var(--cyan); font-size: 1rem; margin: 2rem 0 1rem 0; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+        .key-analysis { background: var(--card); padding: 1.5rem; border: 1px solid var(--border); border-radius: 4px; margin-bottom: 1.5rem; }
+        .key-analysis table { width: 100%; border-collapse: collapse; }
+        .key-analysis th { color: var(--amber); text-align: left; padding: 0.4rem 0.8rem; border-bottom: 1px solid var(--border); }
+        .key-analysis td { padding: 0.4rem 0.8rem; border-bottom: 1px solid rgba(26, 26, 42, 0.5); }
+        .match { color: var(--green); }
+        .mismatch { color: var(--red); font-weight: bold; }
+        .info { margin-top: 1.5rem; color: var(--muted); font-size: 0.7rem; }
+        .note { color: var(--violet); font-style: italic; margin: 0.5rem 0; }
+    </style>
+</head>
+<body>
+    <h1>AETHER-7 SSH Key Analysis</h1>
+    <p>Target: /home/kite-backup/.ssh/authorized_keys | Host: 10.7.7.43</p>
+
+    <!-- Raw authorized_keys -->
+    <h2 class="section-title">1. Raw authorized_keys File</h2>
+    <div class="terminal">
+        <p><span class="prompt">root@aether-7:~#</span> cat /home/kite-backup/.ssh/authorized_keys</p>
+        <div class="output">
+<span class="legitimate">ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDLmK7pV2k9sR7qxNfJ3M5h2aW+0w8TdKz4vR6pN8xJ2e7sY5nB3qK1fL9mH+cX4gD2rT8wQzV0b6kY5jA1eN3sF4hR7iG+oU9yP2aW0kL5mJ+bN3cV8xQ6gF1dS4hR7jY+eT5uI0pL8mK+nB3aW2sX6vR9cQ4fJ1gD7kY+hT5eU8iO0pL2mN+bV3cW6xQ4gF1dS8hR7jA+kY5eT0uI9pL3mK+nB4aW2sX7vR8cQ1fJ6gD9kY+hT5eU0iO3pL2mN+bV7cW4xQ9gF1dS6hR8jA+kY0eT5uI7pL3mK+nB2aW9sX4vR1cQ8fJ6gD7kY+hT0eU5iO3pL9mN+bV4cW2xQ6gF8dS1hR7jA+kY5eT3uI0pL2mK+nB9aW4sX7vR6cQ1fJ8gD3kY+hT5eU0iO7pL2mN+bV3cW9xQ4gF6dS1hR8jA+kY0eT5uI3pL7mK+nB2aW9sX4vR1cQ6fJ8gD7kY+hT0eU5iO3pL9mN+bV4cW2xQ6gF8dS1hR7jA+kY5eT kabir@nexus-deploy-2024</span>
+<span class="planted">ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHw4pLk8aQ3xB7nR9fV2mK5jT0cY6wS1dG4hU8eI3oP kite-backup-2019</span>
+        </div>
+    </div>
+
+    <!-- File timestamps -->
+    <h2 class="section-title">2. File Timestamps</h2>
+    <div class="terminal">
+        <p><span class="prompt">root@aether-7:~#</span> stat /home/kite-backup/.ssh/authorized_keys</p>
+        <div class="output">
+  File: /home/kite-backup/.ssh/authorized_keys
+  Size: 784       	Blocks: 8          IO Block: 4096   regular file
+Device: fd00h/64768d	Inode: 524312     Links: 1
+Access: (0600/-rw-------)  Uid: ( 1001/kite-backup)   Gid: ( 1001/kite-backup)
+Access: 2026-10-01 01:37:00.000000000 +0530
+<span class="mismatch">Modify: 2026-10-01 01:34:40.000000000 +0530</span>
+<span class="mismatch">Change: 2026-10-01 01:34:40.000000000 +0530</span>
+ Birth: 2026-10-01 01:34:25.000000000 +0530
+        </div>
+        <p class="note">Note: The file was created on Oct 1, 2026 — not 2019 as the key comment suggests.</p>
+    </div>
+
+    <!-- Key comparison -->
+    <h2 class="section-title">3. Key Comparison Analysis</h2>
+    <div class="key-analysis">
+        <table>
+            <thead>
+                <tr>
+                    <th>Property</th>
+                    <th>Key 1 (Legitimate)</th>
+                    <th>Key 2 (Suspicious)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Algorithm</td>
+                    <td class="match">RSA-4096</td>
+                    <td class="mismatch">Ed25519</td>
+                </tr>
+                <tr>
+                    <td>Comment</td>
+                    <td class="match">kabir@nexus-deploy-2024</td>
+                    <td class="mismatch">kite-backup-2019</td>
+                </tr>
+                <tr>
+                    <td>Fingerprint (SHA256)</td>
+                    <td>SHA256:9xKq+R3mV7p...</td>
+                    <td>SHA256:Wz4pLk8aQ3x...</td>
+                </tr>
+                <tr>
+                    <td>Matches KABIR's laptop?</td>
+                    <td class="match">Yes — matches /home/kabir/.ssh/id_rsa.pub on his workstation</td>
+                    <td class="mismatch">No — not found on any NEXUS-registered device</td>
+                </tr>
+                <tr>
+                    <td>Key creation claim</td>
+                    <td class="match">2024 (consistent with NEXUS deployment)</td>
+                    <td class="mismatch">2019 (comment claims, but Ed25519 was rarely used in 2019)</td>
+                </tr>
+                <tr>
+                    <td>Actual addition date</td>
+                    <td>N/A (file was freshly created Oct 1)</td>
+                    <td class="mismatch">2026-10-01 01:34:40 IST (3 days before incident)</td>
+                </tr>
+                <tr>
+                    <td>Added by</td>
+                    <td>nexus-svc-continuity (copied during account setup)</td>
+                    <td class="mismatch">nexus-svc-continuity (same batch — see auth.log)</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Key generation metadata -->
+    <h2 class="section-title">4. Key Generation Metadata</h2>
+    <div class="terminal">
+        <p><span class="prompt">root@aether-7:~#</span> ssh-keygen -l -f /home/kite-backup/.ssh/authorized_keys</p>
+        <div class="output">
+<span class="match">4096 SHA256:9xKq+R3mV7pWx2nB5kL8jT0fY3aQ6cS1dG4hU9eI7oP kabir@nexus-deploy-2024 (RSA)</span>
+<span class="mismatch">256 SHA256:Wz4pLk8aQ3xB7nR9fV2mK5jT0cY6wS1dG4hU8eI3oP kite-backup-2019 (ED25519)</span>
+        </div>
+    </div>
+
+    <!-- Cross-reference with Room 1 -->
+    <h2 class="section-title">5. Cross-Reference: AetherForge Tool</h2>
+    <div class="terminal">
+        <p><span class="prompt">root@aether-7:~#</span> strings /tmp/.keygen_cache 2>/dev/null || echo "Cache cleared, but log fragment recovered:"</p>
+        <div class="output">
+<span class="mismatch">Cache cleared, but log fragment recovered:
+[2026-10-01 01:33:50] AetherForge v2.1 — Key Generation Module
+[2026-10-01 01:33:50] Algorithm: Ed25519
+[2026-10-01 01:33:50] Comment: kite-backup-2019
+[2026-10-01 01:33:50] Output: /tmp/authorized_keys (appended)
+[2026-10-01 01:33:50] Note: Comment backdated for plausibility
+[2026-10-01 01:33:51] Parallax Systems — AetherForge build 2026.09.15</span>
+        </div>
+        <p class="note">Note: AetherForge v2.1 was also identified in Room 1's banner image EXIF data (nexus_banner_final.png).</p>
+    </div>
+
+    <!-- External usage -->
+    <h2 class="section-title">6. External Key Usage</h2>
+    <div class="terminal">
+        <p><span class="prompt">root@aether-7:~#</span> grep "Ed25519" /var/log/auth.log | grep -v "aether-7"</p>
+        <div class="output">
+<span class="mismatch">Oct  1 02:10:33 aether-7 ssh-agent[2950]: key ED25519 SHA256:Wz4pLk8aQ3x... used for outbound connection to 10.7.7.20:22 (volunteer-portal.nexus.internal)</span>
+<span class="mismatch">Oct  1 02:10:34 aether-7 ssh-agent[2950]: identity forwarded: kite-backup-2019 → volunteer-portal.nexus.internal</span>
+        </div>
+        <p class="note">The planted Ed25519 key was used to authenticate to the Meraz Volunteer Portal (10.7.7.20) from AETHER-7.</p>
+    </div>
+
+    <p class="info">SSH key analysis complete. The Ed25519 key was planted by the Curator's toolchain and used to access the Volunteer Portal.</p>
+</body>
+</html>
