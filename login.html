@@ -4,92 +4,465 @@
 <meta charset="utf-8">
 <title>NIGHTJAR — Terminal Login</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
-:root{--bg:#0a0000;--red:#ff1a1a;--dim:#5a0a0a;--yel:#ffe600;--ink:#ffd9d9;box-sizing:border-box;}
-body{margin:0;min-height:100vh;background:var(--bg);color:var(--ink);font-family:"Press Start 2P","Courier New",monospace;display:flex;flex-direction:column;align-items:center;justify-content:center;}
-.box { border: 2px solid var(--red); padding: 2rem; background: #050000; box-shadow: 10px 10px 0 #400; max-width: 600px; width: 90%; margin: 2rem 0; }
-h1 { color: var(--yel); font-size: 1.2rem; margin-top: 0; text-align: center; line-height: 1.5; }
-label { display: block; margin-top: 1rem; font-size: 0.8rem; color: #ffb0b0; }
-input { width: 100%; padding: 0.8rem; margin-top: 0.5rem; background: #000; border: 1px solid var(--red); color: var(--yel); font-family: inherit; font-size: 0.8rem; box-sizing: border-box; }
-input:focus { outline: none; border-color: var(--yel); }
-button { width: 100%; padding: 1rem; margin-top: 1.5rem; background: var(--red); color: #000; font-family: inherit; font-size: 0.9rem; border: none; cursor: pointer; transition: 0.2s; }
-button:hover { background: var(--yel); }
-button.secondary { background: var(--dim); color: var(--ink); padding: 0.8rem; margin-top: 0.5rem; font-size: 0.7rem; }
-button.secondary:hover { background: var(--red); color: #000; }
-.error { color: var(--red); margin-top: 1rem; font-size: 0.8rem; text-align: center; }
-.success { color: #0f0; margin-top: 1rem; font-size: 0.8rem; text-align: center; }
-.toggle { text-align: center; margin-top: 1.5rem; font-size: 0.7rem; cursor: pointer; color: #c66; text-decoration: underline; }
-.toggle:hover { color: var(--yel); }
+:root { 
+    --bg: #050000; 
+    --red: #ff1a1a; 
+    --dim: #5a0a0a; 
+    --yel: #ffe600; 
+    --ink: #ffd9d9; 
+    --panel-bg: #0a0000; 
+    --border: #330000; 
+    box-sizing: border-box; 
+}
+body { 
+    margin: 0; 
+    min-height: 100vh; 
+    background: var(--bg); 
+    color: var(--ink); 
+    font-family: "Press Start 2P", "Courier New", monospace; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: center; 
+    position: relative; 
+}
+.box { 
+    border: 1px solid var(--red); 
+    padding: 2rem; 
+    background: var(--panel-bg); 
+    box-shadow: 0 0 20px rgba(255, 26, 26, 0.15); 
+    max-width: 480px; 
+    width: 90%; 
+    margin: 2rem 0; 
+    position: relative; 
+}
+.box::before { 
+    content: ''; 
+    position: absolute; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 3px; 
+    background: var(--red); 
+}
+.glitch-title { 
+    color: var(--yel); 
+    font-size: 1.1rem; 
+    text-align: center; 
+    margin-bottom: 1.5rem; 
+    text-shadow: 2px 2px 0px rgba(255, 26, 26, 0.5); 
+    letter-spacing: 1px;
+}
 
-/* Hide sections based on state */
+/* Tabs */
+.auth-tabs { 
+    display: flex; 
+    margin-bottom: 1.5rem; 
+    border-bottom: 2px solid var(--border); 
+}
+.tab { 
+    flex: 1; 
+    background: transparent; 
+    color: #666; 
+    border: none; 
+    padding: 0.8rem; 
+    font-family: inherit; 
+    font-size: 0.7rem; 
+    cursor: pointer; 
+    transition: 0.3s; 
+}
+.tab:hover { color: var(--ink); }
+.tab.active { 
+    color: var(--yel); 
+    border-bottom: 2px solid var(--yel); 
+    margin-bottom: -2px; 
+}
+
+/* Panels */
+.panel { 
+    border: 1px dashed var(--border); 
+    padding: 1.2rem 1rem 1rem; 
+    margin-bottom: 1.2rem; 
+    background: #000; 
+    position: relative; 
+}
+.panel-label { 
+    position: absolute; 
+    top: -0.55rem; 
+    left: 0.5rem; 
+    background: #000; 
+    padding: 0 0.5rem; 
+    font-size: 0.6rem; 
+    color: var(--red); 
+    letter-spacing: 0.5px;
+}
+
+/* Inputs & Buttons */
+input { 
+    width: 100%; 
+    padding: 0.8rem; 
+    background: #080000; 
+    border: 1px solid var(--border); 
+    color: var(--ink); 
+    font-family: inherit; 
+    font-size: 0.7rem; 
+    box-sizing: border-box; 
+    transition: 0.2s;
+}
+input:focus { outline: none; border-color: var(--yel); }
+input::placeholder { color: #444; }
+
+.mt-2 { margin-top: 0.8rem; }
+.mt-4 { margin-top: 1.5rem; }
+
+.btn-primary { 
+    width: 100%; 
+    padding: 1rem; 
+    background: var(--red); 
+    color: #000; 
+    font-family: inherit; 
+    font-size: 0.8rem; 
+    border: none; 
+    cursor: pointer; 
+    transition: 0.2s; 
+    box-shadow: 4px 4px 0 #400; 
+}
+.btn-primary:hover:not(:disabled) { 
+    background: var(--yel); 
+    box-shadow: 4px 4px 0 var(--red); 
+    transform: translate(-2px, -2px); 
+}
+.btn-primary:active:not(:disabled) { 
+    transform: translate(2px, 2px); 
+    box-shadow: 0 0 0; 
+}
+.btn-primary:disabled {
+    background: var(--dim);
+    cursor: not-allowed;
+    box-shadow: none;
+    color: #888;
+}
+
+.input-row { display: flex; gap: 0.5rem; }
+.btn-small { 
+    background: var(--dim); 
+    color: var(--ink); 
+    border: 1px solid var(--border); 
+    font-family: inherit; 
+    font-size: 0.6rem; 
+    padding: 0 1rem; 
+    cursor: pointer; 
+    white-space: nowrap; 
+    transition: 0.2s; 
+}
+.btn-small:hover:not(:disabled) { background: var(--red); color: #000; }
+.btn-small:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Radio */
+.radio-group { display: flex; gap: 1rem; margin-top: 0.2rem; }
+.radio-group label { display: flex; align-items: center; gap: 0.5rem; font-size: 0.65rem; color: #888; cursor: pointer; transition: 0.2s; }
+.radio-group label:hover { color: var(--ink); }
+.radio-group input[type="radio"] { width: auto; margin: 0; accent-color: var(--yel); cursor: pointer; }
+
+/* Divider */
+.divider { display: flex; align-items: center; margin: 1.5rem 0; font-size: 0.6rem; color: #444; }
+.divider::before, .divider::after { content: ''; flex: 1; border-bottom: 1px dashed #330000; }
+.divider span { padding: 0 10px; }
+
+/* Text */
+.error-text { color: var(--red); font-size: 0.7rem; text-align: center; margin-top: 0.5rem; line-height: 1.4; }
+.success-text { color: #0f0; font-size: 0.6rem; margin-top: 0.5rem; }
 .hidden { display: none !important; }
 
-/* Radio buttons styling */
-.radio-group { display: flex; gap: 1rem; margin-top: 1rem; }
-.radio-group label { margin-top: 0; display: flex; align-items: center; gap: 0.5rem; cursor: pointer; }
+/* Modal tweaks to match */
+.modal-overlay { 
+    position: fixed; 
+    inset: 0; 
+    background: rgba(0, 0, 0, 0.9); 
+    backdrop-filter: blur(3px); 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    z-index: 1000; 
+}
+.modal-card { 
+    border: 1px solid var(--yel); 
+    padding: 2rem; 
+    background: #050000; 
+    box-shadow: 0 0 30px rgba(255, 230, 0, 0.15); 
+    max-width: 480px; 
+    width: 90%; 
+    max-height: 90vh;
+    overflow-y: auto;
+}
+.badge { 
+    display: inline-block; 
+    background: #111; 
+    border: 1px solid #444; 
+    color: #888; 
+    padding: 0.6rem; 
+    font-size: 0.65rem; 
+    margin-bottom: 1rem; 
+    width: 100%; 
+    box-sizing: border-box; 
+    text-align: center; 
+}
+.badge span { color: #0f0; word-break: break-all; }
 </style>
 </head>
 <body>
 <div class="box">
-    <h1 id="title">SPECTRE AUTHENTICATION</h1>
+    <h1 class="glitch-title">SPECTRE_AUTH</h1>
+    
+    <!-- Auth Mode Tabs -->
+    <div class="auth-tabs">
+        <button type="button" id="tab-login" class="tab active" onclick="setMode('login')">LOGIN</button>
+        <button type="button" id="tab-register" class="tab" onclick="setMode('register')">REGISTER</button>
+    </div>
+
+    <!-- Google 1-Click Jack-In Section -->
+    <div id="google-auth-section" class="panel">
+        <div class="panel-label">>> SECURE JACK-IN</div>
+        <div style="margin-top: 0.5rem; width: 100%; display: flex; justify-content: center;">
+            <div id="google-btn-wrapper"></div>
+        </div>
+        <div id="google-config-notice" class="error-text hidden" style="margin-top: 1rem;">
+            [SYS ADVISORY: Set GOOGLE_CLIENT_ID in .env]
+        </div>
+    </div>
+
+    <div class="divider"><span>MANUAL OVERRIDE</span></div>
+
     <form id="auth-form" onsubmit="submitForm(event)">
         
-        <!-- Registration Fields -->
-        <div id="register-fields">
-            <label>EMAIL</label>
-            <input type="email" id="email">
-            <button type="button" class="secondary" id="btn-send-code" onclick="sendCode()">SEND VERIFICATION CODE</button>
-            <div id="code-msg" class="success"></div>
-
-            <label>VERIFICATION CODE</label>
-            <input type="text" id="verification_code" placeholder="6-digit code">
-
-            <div class="radio-group">
-                <label><input type="radio" name="team_action" value="create_team" checked onchange="toggleTeamAction()"> Create Team</label>
-                <label><input type="radio" name="team_action" value="join_team" onchange="toggleTeamAction()"> Join Team</label>
+        <!-- Registration Specific Fields -->
+        <div id="register-fields" class="hidden">
+            <div class="panel">
+                <div class="panel-label">>> IDENTITY VERIFICATION</div>
+                <div class="input-row">
+                    <input type="email" id="email" placeholder="AGENT_EMAIL@DOMAIN.COM">
+                    <button type="button" class="btn-small" id="btn-send-code" onclick="sendCode()">SEND_CODE</button>
+                </div>
+                <div id="code-msg" class="success-text"></div>
+                <input type="text" id="verification_code" placeholder="6-DIGIT_AUTH_CODE" class="mt-2">
             </div>
 
-            <div id="create-team-section">
-                <label>NEW TEAM NAME (Max 4 members)</label>
-                <input type="text" id="teamname">
-            </div>
-
-            <div id="join-team-section" class="hidden">
-                <label>TEAM INVITE CODE</label>
-                <input type="text" id="invite_code">
+            <div class="panel">
+                <div class="panel-label">>> SQUAD ASSIGNMENT</div>
+                <div class="radio-group">
+                    <label><input type="radio" name="team_action" value="create_team" checked onchange="toggleTeamAction()"> CREATE SQUAD</label>
+                    <label><input type="radio" name="team_action" value="join_team" onchange="toggleTeamAction()"> JOIN SQUAD</label>
+                </div>
+                <input type="text" id="teamname" placeholder="SQUAD_NAME (Max 4)" class="mt-2">
+                <input type="text" id="invite_code" placeholder="INVITE_CODE" class="mt-2 hidden">
             </div>
         </div>
 
         <!-- Common Fields -->
-        <label>USERNAME</label>
-        <input type="text" id="username" required>
+        <div class="panel">
+            <div class="panel-label">>> CREDENTIALS</div>
+            <input type="text" id="username" placeholder="CODENAME (USERNAME)" required>
+            <input type="password" id="password" placeholder="ACCESS_CODE (PASSWORD)" required class="mt-2">
+        </div>
         
-        <label>ACCESS CODE (PASSWORD)</label>
-        <input type="password" id="password" required>
+        <div id="error-msg" class="error-text"></div>
         
-        <div id="error-msg" class="error"></div>
-        <button type="submit" id="btn-submit">JACK IN (REGISTER)</button>
+        <button type="submit" id="btn-submit" class="btn-primary mt-4">AUTHENTICATE (LOGIN)</button>
     </form>
-    <div class="toggle" onclick="toggleMode()" id="toggle-txt">Already registered? Log in here.</div>
 </div>
-<script>
-let mode = 'register'; 
 
-function toggleMode() {
-    mode = mode === 'register' ? 'login' : 'register';
+<!-- Modal: New Google Operative Profile Setup -->
+<div id="google-setup-modal" class="modal-overlay hidden">
+    <div class="modal-card">
+        <h2 class="glitch-title" style="font-size: 1rem; margin-bottom: 1rem;">OPERATIVE CONFIG</h2>
+        
+        <div class="badge">VERIFIED BY GOOGLE:<br><span id="g-email-badge" style="display:block; margin-top:0.4rem;"></span></div>
+        <p style="font-size:0.65rem; color:#888; line-height:1.5; margin-bottom: 1.5rem; text-align: center;">Identity confirmed. Assign codename and squad assignment.</p>
+        
+        <div class="panel">
+            <div class="panel-label">>> CODENAME</div>
+            <input type="text" id="g-username" placeholder="e.g. Spectre_07" required>
+        </div>
+
+        <div class="panel">
+            <div class="panel-label">>> SQUAD ASSIGNMENT</div>
+            <div class="radio-group">
+                <label><input type="radio" name="g_team_action" value="create_team" checked onchange="toggleGoogleTeamAction()"> CREATE SQUAD</label>
+                <label><input type="radio" name="g_team_action" value="join_team" onchange="toggleGoogleTeamAction()"> JOIN SQUAD</label>
+            </div>
+            <input type="text" id="g-teamname" placeholder="SQUAD_NAME (Max 4)" class="mt-2">
+            <input type="text" id="g-invite-code" placeholder="INVITE_CODE" class="mt-2 hidden">
+        </div>
+
+        <div id="g-modal-err" class="error-text"></div>
+
+        <button type="button" id="btn-complete-google" class="btn-primary mt-4" onclick="completeGoogleRegistration()">INITIALIZE & JACK IN</button>
+        <button type="button" class="tab mt-2" style="width: 100%; display: block; border-bottom: none; text-align: center;" onclick="closeGoogleModal()">[ ABORT CONFIGURATION ]</button>
+    </div>
+</div>
+
+<script>
+let mode = 'login'; 
+let googleTokenCache = null;
+
+window.addEventListener('DOMContentLoaded', initGoogleAuth);
+
+async function initGoogleAuth() {
+    try {
+        const res = await fetch('/api/auth/config');
+        const config = await res.json();
+        
+        if (config.google_client_id) {
+            google.accounts.id.initialize({
+                client_id: config.google_client_id,
+                callback: handleGoogleCredentialResponse,
+                auto_select: false
+            });
+            google.accounts.id.renderButton(
+                document.getElementById("google-btn-wrapper"),
+                { theme: "filled_black", size: "large", text: "continue_with", shape: "rectangular", width: 280 }
+            );
+        } else {
+            document.getElementById('google-config-notice').classList.remove('hidden');
+        }
+    } catch(e) {
+        console.warn("Google Auth initialization deferred:", e);
+    }
+}
+
+async function handleGoogleCredentialResponse(response) {
+    const idToken = response.credential;
+    googleTokenCache = idToken;
+    const err = document.getElementById('error-msg');
+    err.innerText = '';
+
+    try {
+        const body = new URLSearchParams({ id_token: idToken });
+        const res = await fetch('/api/auth/google', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: body
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+            if (data.status === 'authenticated') {
+                window.location.href = '/hub';
+            } else if (data.status === 'needs_profile') {
+                document.getElementById('g-email-badge').innerText = data.email;
+                if (data.suggested_username) {
+                    document.getElementById('g-username').value = data.suggested_username;
+                }
+                document.getElementById('google-setup-modal').classList.remove('hidden');
+            }
+        } else {
+            err.innerText = data.detail || "Google authentication failed";
+        }
+    } catch(e) {
+        err.innerText = "System offline. Could not contact auth server.";
+    }
+}
+
+function setMode(newMode) {
+    mode = newMode;
+    document.getElementById('tab-login').classList.toggle('active', mode === 'login');
+    document.getElementById('tab-register').classList.toggle('active', mode === 'register');
     
     document.getElementById('register-fields').classList.toggle('hidden', mode === 'login');
+    document.getElementById('btn-submit').innerText = mode === 'register' ? 'INITIALIZE (REGISTER)' : 'AUTHENTICATE (LOGIN)';
     
-    document.getElementById('btn-submit').innerText = mode === 'register' ? 'JACK IN (REGISTER)' : 'AUTHENTICATE (LOGIN)';
-    document.getElementById('toggle-txt').innerText = mode === 'register' ? 'Already registered? Log in here.' : 'Need a team? Register here.';
     document.getElementById('error-msg').innerText = '';
     document.getElementById('code-msg').innerText = '';
 }
 
 function toggleTeamAction() {
     const action = document.querySelector('input[name="team_action"]:checked').value;
-    document.getElementById('create-team-section').classList.toggle('hidden', action !== 'create_team');
-    document.getElementById('join-team-section').classList.toggle('hidden', action !== 'join_team');
+    const teamNameInput = document.getElementById('teamname');
+    const inviteCodeInput = document.getElementById('invite_code');
+    
+    if (action === 'create_team') {
+        teamNameInput.classList.remove('hidden');
+        inviteCodeInput.classList.add('hidden');
+    } else {
+        teamNameInput.classList.add('hidden');
+        inviteCodeInput.classList.remove('hidden');
+    }
+}
+
+function toggleGoogleTeamAction() {
+    const action = document.querySelector('input[name="g_team_action"]:checked').value;
+    const teamNameInput = document.getElementById('g-teamname');
+    const inviteCodeInput = document.getElementById('g-invite-code');
+    
+    if (action === 'create_team') {
+        teamNameInput.classList.remove('hidden');
+        inviteCodeInput.classList.add('hidden');
+    } else {
+        teamNameInput.classList.add('hidden');
+        inviteCodeInput.classList.remove('hidden');
+    }
+}
+
+function closeGoogleModal() {
+    document.getElementById('google-setup-modal').classList.add('hidden');
+    googleTokenCache = null;
+    document.getElementById('g-modal-err').innerText = '';
+}
+
+async function completeGoogleRegistration() {
+    if (!googleTokenCache) return;
+    const username = document.getElementById('g-username').value.trim();
+    const action = document.querySelector('input[name="g_team_action"]:checked').value;
+    const teamName = document.getElementById('g-teamname').value.trim();
+    const inviteCode = document.getElementById('g-invite-code').value.trim();
+    const err = document.getElementById('g-modal-err');
+    err.innerText = '';
+
+    if (!username) {
+        err.innerText = "Please specify an operative codename.";
+        return;
+    }
+    if (action === 'create_team' && !teamName) {
+        err.innerText = "Team name is required.";
+        return;
+    }
+    if (action === 'join_team' && !inviteCode) {
+        err.innerText = "Team invite code is required.";
+        return;
+    }
+
+    const btn = document.getElementById('btn-complete-google');
+    btn.disabled = true;
+    btn.innerText = "INITIALIZING...";
+
+    try {
+        const body = new URLSearchParams({
+            id_token: googleTokenCache,
+            username: username,
+            action: action,
+            team_name: teamName,
+            invite_code: inviteCode
+        });
+        const res = await fetch('/api/auth/google', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: body
+        });
+        const data = await res.json();
+        if (res.ok && data.status === 'authenticated') {
+            window.location.href = '/hub';
+        } else {
+            err.innerText = data.detail || "Initialization failed";
+            btn.disabled = false;
+            btn.innerText = "INITIALIZE & JACK IN";
+        }
+    } catch(e) {
+        err.innerText = "Network error. Try again.";
+        btn.disabled = false;
+        btn.innerText = "INITIALIZE & JACK IN";
+    }
 }
 
 async function sendCode() {
@@ -127,7 +500,7 @@ async function sendCode() {
         err.innerText = "System offline.";
     } finally {
         btn.disabled = false;
-        btn.innerText = "RESEND CODE";
+        btn.innerText = "SEND_CODE";
     }
 }
 
@@ -192,13 +565,13 @@ async function submitForm(e) {
         } else {
             err.innerText = data.detail || "Authentication Failed";
             btn.disabled = false;
-            btn.innerText = mode === 'register' ? 'JACK IN (REGISTER)' : 'AUTHENTICATE (LOGIN)';
+            btn.innerText = mode === 'register' ? 'INITIALIZE (REGISTER)' : 'AUTHENTICATE (LOGIN)';
         }
-    } catch(err) {
+    } catch(error) {
         document.getElementById('error-msg').innerText = "System offline.";
         const btn = document.getElementById('btn-submit');
         btn.disabled = false;
-        btn.innerText = mode === 'register' ? 'JACK IN (REGISTER)' : 'AUTHENTICATE (LOGIN)';
+        btn.innerText = mode === 'register' ? 'INITIALIZE (REGISTER)' : 'AUTHENTICATE (LOGIN)';
     }
 }
 </script>
