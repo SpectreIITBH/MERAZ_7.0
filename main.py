@@ -8,6 +8,12 @@ import datetime
 import os
 import random
 import string
+import json
+import urllib.request
+import re
+from dotenv import load_dotenv
+
+load_dotenv()
 
 import database, models
 
@@ -194,6 +200,129 @@ async def register(
     response.set_cookie(key="access_token", value=f"Bearer {token}", httponly=True)
     return {"message": "Registered successfully"}
 
+def verify_google_id_token(token: str):
+    """Verifies a Google ID token using Google's public tokeninfo endpoint."""
+    try:
+        url = f"https://oauth2.googleapis.com/tokeninfo?id_token={token}"
+        req = urllib.request.Request(url, headers={"User-Agent": "SPECTRE-FastAPI"})
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            if resp.status != 200:
+                return None
+            data = json.loads(resp.read().decode("utf-8"))
+            
+            if data.get("iss") not in ["accounts.google.com", "https://accounts.google.com"]:
+                return None
+                
+            google_client_id = os.getenv("GOOGLE_CLIENT_ID", "").strip()
+            if google_client_id and data.get("aud") != google_client_id:
+                return None
+                
+            ev = data.get("email_verified")
+            if str(ev).lower() not in ["true", "1"]:
+                return None
+                
+            return data
+    except Exception as e:
+        print(f"Error validating Google token: {e}")
+        return None
+
+@app.get("/api/auth/config")
+async def get_auth_config():
+    return {
+        "google_client_id": os.getenv("GOOGLE_CLIENT_ID", "").strip()
+    }
+
+@app.post("/api/auth/google")
+async def google_auth(
+    response: Response,
+    id_token: str = Form(...),
+    username: str = Form(None),
+    action: str = Form(None),
+    team_name: str = Form(None),
+    invite_code: str = Form(None),
+    db: Session = Depends(database.get_db)
+):
+    payload = verify_google_id_token(id_token)
+    if not payload or not payload.get("email"):
+        raise HTTPException(status_code=400, detail="Invalid or unverified Google token")
+
+    email = payload.get("email").strip().lower()
+
+    # Check if a user already exists with this email
+    user = db.query(models.User).filter(func.lower(models.User.email) == email).first()
+
+    if user:
+        # Existing user: Log in directly
+        expire = datetime.datetime.utcnow() + datetime.timedelta(hours=24)
+        token = jwt.encode({"sub": user.username, "exp": expire}, SECRET_KEY, algorithm="HS256")
+        response.set_cookie(key="access_token", value=f"Bearer {token}", httponly=True)
+        return {"status": "authenticated", "message": "Login successful", "is_admin": user.is_admin}
+
+    # New user: Check if operative profile details provided
+    if not username or not action:
+        raw_name = payload.get("given_name") or payload.get("name") or email.split("@")[0]
+        suggested = re.sub(r'[^a-zA-Z0-9_]', '', raw_name)[:15]
+        return {
+            "status": "needs_profile",
+            "email": email,
+            "suggested_username": suggested,
+            "name": payload.get("name", "")
+        }
+
+    username = username.strip()
+    if not username:
+        raise HTTPException(status_code=400, detail="Operative codename (username) is required")
+
+    if db.query(models.User).filter(models.User.username == username).first():
+        raise HTTPException(status_code=400, detail="Username already registered. Please choose another.")
+
+    team = None
+    if action == "create_team":
+        if not team_name or not team_name.strip():
+            raise HTTPException(status_code=400, detail="Team name is required to create a team")
+        team_name = team_name.strip()
+        if db.query(models.Team).filter(models.Team.name == team_name).first():
+            raise HTTPException(status_code=400, detail="Team name already taken")
+
+        new_invite_code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+        team = models.Team(name=team_name, invite_code=new_invite_code)
+        db.add(team)
+        db.commit()
+        db.refresh(team)
+    elif action == "join_team":
+        if not invite_code or not invite_code.strip():
+            raise HTTPException(status_code=400, detail="Invite code is required to join a team")
+        invite_code = invite_code.strip().upper()
+        team = db.query(models.Team).filter(models.Team.invite_code == invite_code).first()
+        if not team:
+            raise HTTPException(status_code=400, detail="Invalid team invite code")
+        if len(team.users) >= 4:
+            raise HTTPException(status_code=400, detail="Team is full (maximum 4 members)")
+    else:
+        raise HTTPException(status_code=400, detail="Invalid team action")
+
+    # Create new verified user
+    new_user = models.User(
+        username=username,
+        email=email,
+        is_email_verified=True,
+        hashed_password=None,
+        team_id=team.id,
+        is_admin=False
+    )
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
+    if action == "create_team":
+        team.leader_id = new_user.id
+        db.commit()
+
+    expire = datetime.datetime.utcnow() + datetime.timedelta(hours=24)
+    token = jwt.encode({"sub": username, "exp": expire}, SECRET_KEY, algorithm="HS256")
+    response.set_cookie(key="access_token", value=f"Bearer {token}", httponly=True)
+    return {"status": "authenticated", "message": "Registered and logged in"}
+
 @app.post("/api/login")
 async def login(
     response: Response,
@@ -202,8 +331,11 @@ async def login(
     db: Session = Depends(database.get_db)
 ):
     user = db.query(models.User).filter(models.User.username == username).first()
-    if not user or not pwd_context.verify(password, user.hashed_password):
-        raise HTTPException(status_code=400, detail="Incorrect username or password")
+    if not user or not user.hashed_password or not pwd_context.verify(password, user.hashed_password):
+        raise HTTPException(
+            status_code=400, 
+            detail="Incorrect username or password. (If registered via Google, please sign in with Google.)"
+        )
 
     expire = datetime.datetime.utcnow() + datetime.timedelta(hours=24)
     token = jwt.encode({"sub": username, "exp": expire}, SECRET_KEY, algorithm="HS256")
