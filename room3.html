@@ -1,647 +1,682 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Room 3 — The Intercept</title>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --ink: #010204;
-      --surface: rgba(255,255,255,0.015);
-      --line: rgba(255,255,255,0.06);
-      --cyan: #9ed5df;
-      --cyan-soft: rgba(158,213,223,0.12);
-      --red: #d45a5a;
-      --red-glow: rgba(212,90,90,0.25);
-      --amber: #c4a86e;
-      --text: rgba(240,245,250,0.88);
-      --muted: rgba(240,245,250,0.35);
-      --font-display: 'Cormorant Garamond', Georgia, serif;
-      --font-mono: 'JetBrains Mono', monospace;
-    }
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>NIGHTJAR — Room 3: The Intercept</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;700&family=VT323&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #020617;
+            --panel-bg: rgba(15, 23, 42, 0.85);
+            --red: #ef4444;
+            --red-glow: rgba(239, 68, 68, 0.4);
+            --cyan: #06B6D4;
+            --cyan-glow: rgba(6, 182, 212, 0.4);
+            --amber: #F59E0B;
+            --green: #10B981;
+            --purple: #8b5cf6;
+            --text-main: #e2e8f0;
+            --text-dim: #94a3b8;
+            --font-ui: 'Inter', sans-serif;
+            --font-code: 'JetBrains Mono', monospace;
+            --font-glitch: 'VT323', monospace;
+        }
 
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
-    html { scroll-behavior: smooth; }
+        body {
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.05) 0%, transparent 60%),
+                linear-gradient(rgba(0, 0, 0, 0.4) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 0, 0, 0.4) 1px, transparent 1px);
+            background-size: 100% 100%, 20px 20px, 20px 20px;
+            color: var(--text-main);
+            font-family: var(--font-ui);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
 
-    body {
-      background: var(--ink);
-      color: var(--text);
-      font-family: var(--font-display);
-      font-weight: 300;
-      line-height: 1.7;
-      min-height: 100vh;
-      overflow-x: hidden;
-    }
+        /* Scanline Overlay */
+        body::after {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1));
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.3;
+        }
 
-    /* Ambient field — extremely subtle */
-    .field {
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      z-index: 0;
-      background:
-        radial-gradient(ellipse at 30% 20%, rgba(158,213,223,0.04) 0%, transparent 50%),
-        radial-gradient(ellipse at 70% 80%, rgba(212,90,90,0.03) 0%, transparent 50%);
-    }
+        /* Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background: rgba(0, 0, 0, 0.6);
+            border-bottom: 1px solid rgba(139, 92, 246, 0.3);
+            font-family: var(--font-code);
+            font-size: 12px;
+            z-index: 10;
+        }
+        
+        .brand { color: var(--purple); letter-spacing: 1px; text-shadow: 0 0 8px rgba(139,92,246,0.4); }
+        .status .blink-red { color: var(--red); animation: blink 1s infinite; text-shadow: 0 0 8px var(--red-glow); }
+        .timer { color: var(--text-dim); }
+        .timer span { color: var(--text-main); }
+        .exit-btn {
+            color: var(--purple);
+            text-decoration: none;
+            border: 1px solid var(--purple);
+            padding: 4px 12px;
+            border-radius: 2px;
+            transition: all 0.2s;
+        }
+        .exit-btn:hover { background: rgba(139, 92, 246, 0.2); color: #fff; }
 
-    /* Very subtle grid overlay */
-    .field::after {
-      content: '';
-      position: absolute; inset: 0;
-      background-image:
-        linear-gradient(rgba(255,255,255,0.012) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,0.012) 1px, transparent 1px);
-      background-size: 120px 120px;
-      pointer-events: none;
-    }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 
-    main { position: relative; z-index: 1; max-width: 980px; margin: 0 auto; padding: 160px 40px 200px; }
+        /* Main Layout */
+        .dashboard {
+            display: grid;
+            grid-template-columns: 300px 1fr 350px;
+            gap: 20px;
+            padding: 20px;
+            flex: 1;
+            height: calc(100vh - 40px);
+        }
 
-    /* Section spacing — generous breathing room */
-    section { margin-bottom: 220px; }
-    section:last-of-type { margin-bottom: 0; }
+        .panel {
+            background: var(--panel-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            position: relative;
+        }
 
-    /* Small mono label above sections */
-    .label {
-      font-family: var(--font-mono);
-      font-size: 0.65rem;
-      letter-spacing: 3.5px;
-      text-transform: uppercase;
-      color: var(--cyan);
-      margin-bottom: 20px;
-      opacity: 0.7;
-    }
+        .panel::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--purple), transparent);
+            opacity: 0.5;
+        }
 
-    /* Hero — enormous, quiet title */
-    .hero { margin-bottom: 240px; }
-    .hero h1 {
-      font-family: var(--font-display);
-      font-weight: 300;
-      font-size: clamp(4.5rem, 14vw, 11rem);
-      letter-spacing: -0.04em;
-      line-height: 0.88;
-      color: rgba(240,245,250,0.96);
-      margin-bottom: 60px;
-      position: relative;
-    }
-    .hero h1 em {
-      font-style: italic;
-      font-weight: 300;
-      color: var(--cyan);
-    }
-    .hero .line-break { display: block; }
+        .panel-header {
+            font-family: var(--font-code);
+            font-size: 11px;
+            padding: 10px 15px;
+            background: rgba(0, 0, 0, 0.5);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            color: var(--purple);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
 
-    /* Subtitle — very muted, airy */
-    .hero-sub {
-      font-size: 1.05rem;
-      color: var(--muted);
-      max-width: 520px;
-      line-height: 1.9;
-      letter-spacing: 0.01em;
-    }
-    .hero-sub .dot {
-      display: inline-block;
-      width: 6px; height: 6px;
-      border-radius: 50%;
-      background: var(--red);
-      margin-right: 10px;
-      vertical-align: middle;
-      animation: pulse 3s ease-in-out infinite;
-    }
-    @keyframes pulse {
-      0%, 100% { opacity: 0.35; transform: scale(1); }
-      50% { opacity: 1; transform: scale(1.2); }
-    }
+        /* Beacon Visualizer Panel */
+        .beacon-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+        }
 
-    /* Opening transmission quote */
-    .transmission {
-      border-left: 1px solid var(--line);
-      padding-left: 28px;
-      margin: 80px 0 120px 12px;
-    }
-    .transmission blockquote {
-      font-style: italic;
-      font-size: 1.35rem;
-      line-height: 1.65;
-      color: rgba(240,245,250,0.72);
-      letter-spacing: 0.01em;
-      max-width: 600px;
-    }
-    .transmission blockquote cite {
-      display: block;
-      margin-top: 28px;
-      font-family: var(--font-mono);
-      font-size: 0.7rem;
-      font-style: normal;
-      letter-spacing: 2px;
-      color: var(--cyan);
-      opacity: 0.6;
-    }
+        .radar {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            border: 1px solid rgba(6, 182, 212, 0.2);
+            background: radial-gradient(circle, rgba(6,182,212,0.1) 0%, transparent 70%);
+            overflow: hidden;
+        }
 
-    /* Divider line */
-    .divider {
-      height: 1px;
-      background: linear-gradient(90deg, transparent, var(--line), transparent);
-      margin: 140px 0;
-    }
+        .radar::before {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 100%; height: 100%;
+            background: conic-gradient(from 0deg, transparent 70%, rgba(6,182,212,0.4) 100%);
+            transform-origin: 0 0;
+            animation: radar-spin 4s linear infinite;
+        }
 
-    /* Section heading — very large, minimal */
-    h2 {
-      font-family: var(--font-display);
-      font-weight: 300;
-      font-size: clamp(2.2rem, 5vw, 3.4rem);
-      letter-spacing: -0.03em;
-      line-height: 1.15;
-      color: rgba(240,245,250,0.92);
-      margin-bottom: 28px;
-    }
+        .radar-grid {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background-image: 
+                linear-gradient(rgba(6,182,212,0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(6,182,212,0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+            background-position: center;
+        }
 
-    /* Body text — airy, muted */
-    p {
-      color: var(--muted);
-      font-size: 0.95rem;
-      line-height: 1.85;
-      max-width: 480px;
-    }
+        .radar-circles {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            border: 1px solid rgba(6,182,212,0.1);
+            transform: scale(0.66);
+        }
+        .radar-circles::before {
+            content:'';
+            position:absolute; inset:0; border-radius:50%; border: 1px solid rgba(6,182,212,0.1); transform: scale(0.5);
+        }
 
-    /* The Beacon — circular visual with breathing space */
-    .beacon-visual {
-      position: relative;
-      width: 260px;
-      height: 260px;
-      margin: 80px auto 60px;
-    }
-    .beacon-ring {
-      position: absolute; inset: 0;
-      border-radius: 50%;
-      border: 1px solid var(--line);
-      animation: ring-expand 4s ease-in-out infinite;
-    }
-    @keyframes ring-expand {
-      0%, 100% { transform: scale(1); opacity: 0.3; }
-      50% { transform: scale(1.15); opacity: 0.05; }
-    }
-    .beacon-center {
-      position: absolute;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      width: 14px; height: 14px;
-      border-radius: 50%;
-      background: var(--red);
-      box-shadow: 0 0 30px var(--red-glow);
-      animation: pulse 2s ease-in-out infinite;
-    }
-    .beacon-label {
-      text-align: center;
-      font-family: var(--font-mono);
-      font-size: 0.6rem;
-      letter-spacing: 3px;
-      color: var(--red);
-      opacity: 0.6;
-      margin-top: 320px;
-    }
+        .beacon-blip {
+            position: absolute;
+            top: 30%; left: 65%;
+            width: 6px; height: 6px;
+            background: var(--red);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--red);
+            animation: blip-pulse 4s infinite;
+        }
 
-    /* Evidence links — minimal, elegant buttons */
-    .evidence-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 16px;
-      margin-top: 60px;
-    }
-    .evidence-card {
-      display: flex;
-      align-items: center;
-      gap: 20px;
-      padding: 28px 28px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      text-decoration: none;
-      color: inherit;
-      transition: border-color 0.4s ease, background 0.4s ease;
-      background: transparent;
-    }
-    .evidence-card:hover {
-      border-color: var(--cyan);
-      background: rgba(158,213,223,0.015);
-    }
-    .evidence-card .num {
-      font-family: var(--font-display);
-      font-size: 2.2rem;
-      font-weight: 300;
-      color: var(--cyan);
-      opacity: 0.5;
-      line-height: 1;
-    }
-    .evidence-card .info h4 {
-      font-family: var(--font-display);
-      font-weight: 400;
-      font-size: 1.1rem;
-      letter-spacing: -0.01em;
-      color: rgba(240,245,250,0.92);
-      margin-bottom: 6px;
-    }
-    .evidence-card .info span {
-      font-family: var(--font-mono);
-      font-size: 0.7rem;
-      color: var(--muted);
-      letter-spacing: 0.5px;
-    }
+        @keyframes radar-spin { 100% { transform: rotate(360deg); } }
+        @keyframes blip-pulse { 
+            0%, 80%, 100% { opacity: 0; transform: scale(1); } 
+            85% { opacity: 1; transform: scale(1.5); }
+            90% { opacity: 0.5; transform: scale(1); }
+        }
 
-    /* Challenges — 4 spacious cards */
-    .challenge {
-      border-top: 1px solid var(--line);
-      padding-top: 64px;
-      padding-bottom: 80px;
-    }
-    .challenge:first-of-type { border-top: none; padding-top: 0; }
-    .challenge-header {
-      display: flex;
-      align-items: baseline;
-      gap: 24px;
-      margin-bottom: 36px;
-    }
-    .challenge-num {
-      font-family: var(--font-mono);
-      font-size: 0.75rem;
-      color: var(--cyan);
-      letter-spacing: 2px;
-      opacity: 0.5;
-    }
-    .challenge h3 {
-      font-family: var(--font-display);
-      font-weight: 300;
-      font-size: clamp(1.6rem, 4vw, 2.2rem);
-      letter-spacing: -0.02em;
-      line-height: 1.2;
-      color: rgba(240,245,250,0.92);
-    }
-    .challenge-desc {
-      max-width: 480px;
-      color: var(--muted);
-      font-size: 0.92rem;
-      line-height: 1.85;
-      margin-bottom: 28px;
-    }
-    .challenge-flag {
-      font-family: var(--font-mono);
-      font-size: 0.75rem;
-      letter-spacing: 1.5px;
-      color: var(--amber);
-      opacity: 0.7;
-    }
+        .beacon-stats {
+            margin-top: 30px;
+            width: 100%;
+            font-family: var(--font-code);
+            font-size: 11px;
+            color: var(--cyan);
+        }
+        .stat-row { display: flex; justify-content: space-between; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px dashed rgba(6,182,212,0.2); }
+        .stat-val { color: var(--text-main); }
 
-    .challenge-flag.show { display: block !important; color: var(--green); opacity: 1; }
+        /* Packet Stream / TCP Recon */
+        .stream-panel {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .stream-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            font-family: var(--font-code);
+            font-size: 12px;
+        }
 
-    .challenge-flag.show { display: block !important; color: var(--green) !important; opacity: 1 !important; }
+        .packet-row {
+            display: flex;
+            gap: 15px;
+            padding: 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            background: rgba(0,0,0,0.2);
+            margin-bottom: 4px;
+            transition: background 0.2s;
+        }
+        .packet-row:hover { background: rgba(139,92,246,0.1); }
+        .packet-row.anomaly { border-left: 2px solid var(--red); background: rgba(239,68,68,0.05); }
 
-    /* Header */
-    .r-header { display: flex; justify-content: space-between; align-items: center; padding: 14px 40px; background: rgba(10,20,30,0.4); border-bottom: 1px solid rgba(255,255,255,0.06); font-family: var(--font-mono); font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; position: sticky; top: 0; z-index: 10; backdrop-filter: blur(8px); }
-    .r-header a { text-decoration: none; }
+        .p-time { color: var(--text-dim); min-width: 70px; }
+        .p-dir { color: var(--purple); font-weight: bold; min-width: 40px; }
+        .p-dir.in { color: var(--cyan); }
+        .p-proto { color: var(--amber); min-width: 40px; }
+        .p-info { color: var(--text-main); }
+        .p-sub { color: var(--text-dim); font-size: 10px; margin-left: 10px; }
 
-    /* Packet timeline — very clean, airy rows */
-    .packet-row {
-      display: flex;
-      align-items: center;
-      gap: 36px;
-      padding: 20px 0;
-      border-bottom: 1px solid var(--line);
-      font-family: var(--font-mono);
-      font-size: 0.8rem;
-    }
-    .packet-time { color: var(--amber); min-width: 100px; opacity: 0.6; }
-    .packet-dir { min-width: 50px; letter-spacing: 2px; font-size: 0.7rem; }
-    .packet-dir.in { color: var(--cyan); }
-    .packet-dir.out { color: var(--red); opacity: 0.5; }
-    .packet-proto {
-      min-width: 50px;
-      padding: 2px 8px;
-      border-radius: 3px;
-      font-size: 0.65rem;
-      letter-spacing: 1px;
-      border: 1px solid var(--line);
-    }
-    .packet-info { color: rgba(240,245,250,0.55); font-size: 0.78rem; }
-    .packet-info .sub { color: var(--muted); opacity: 0.5; }
+        .tcp-log {
+            margin-top: 30px;
+            border: 1px solid rgba(139,92,246,0.3);
+            background: rgba(0,0,0,0.4);
+            padding: 15px;
+            border-radius: 4px;
+        }
+        .tcp-title { color: var(--purple); margin-bottom: 10px; font-weight: bold; border-bottom: 1px solid rgba(139,92,246,0.2); padding-bottom: 5px; }
+        .t-line { margin-bottom: 6px; line-height: 1.4; }
+        .t-client { color: var(--cyan); }
+        .t-server { color: var(--amber); }
+        .t-warn { color: var(--red); text-shadow: 0 0 5px rgba(239,68,68,0.5); }
 
-    /* TCP stream — simple, clear */
-    .tcp-block {
-      border-left: 1px solid var(--line);
-      padding-left: 24px;
-      margin-top: 36px;
-    }
-    .tcp-line { font-family: var(--font-mono); font-size: 0.82rem; line-height: 2; color: rgba(240,245,250,0.55); }
-    .tcp-client { color: var(--cyan); }
-    .tcp-server { color: var(--amber); }
-    .tcp-label { color: var(--muted); opacity: 0.4; margin-right: 8px; }
+        /* Investigation Targets */
+        .targets-content {
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
 
-    /* Footer — minimal */
-    footer {
-      margin-top: 200px;
-      padding-top: 40px;
-      border-top: 1px solid var(--line);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-family: var(--font-mono);
-      font-size: 0.65rem;
-      letter-spacing: 2px;
-      color: var(--muted);
-      opacity: 0.5;
-    }
+        .target-item {
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 4px;
+            transition: border-color 0.3s;
+        }
+        .target-item:hover { border-color: var(--purple); }
+        .target-item.solved { border-color: var(--green); background: rgba(16, 185, 129, 0.05); }
 
-    /* Responsive */
-    @media (max-width: 720px) {
-      main { padding: 100px 28px 120px; }
-      section { margin-bottom: 140px; }
-      .evidence-grid { grid-template-columns: 1fr; }
-      .challenge-header { flex-direction: column; gap: 8px; }
-    }
-  </style>
+        .target-title {
+            font-weight: 600;
+            font-size: 13px;
+            color: var(--cyan);
+            margin-bottom: 8px;
+            font-family: var(--font-code);
+            text-transform: uppercase;
+        }
+        .target-item.solved .target-title { color: var(--green); }
+
+        .target-desc {
+            font-size: 12px;
+            color: var(--text-dim);
+            margin-bottom: 12px;
+            line-height: 1.5;
+        }
+
+        .evidence-btn {
+            background: rgba(139,92,246,0.1);
+            border: 1px dashed var(--purple);
+            color: var(--purple);
+            padding: 4px 8px;
+            font-size: 10px;
+            font-family: var(--font-code);
+            cursor: pointer;
+            margin-bottom: 10px;
+            display: inline-block;
+            transition: 0.2s;
+        }
+        .evidence-btn:hover { background: var(--purple); color: #fff; }
+
+        .input-group { display: flex; gap: 8px; }
+        .input-group input {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--cyan);
+            padding: 8px;
+            font-family: var(--font-code);
+            font-size: 11px;
+            border-radius: 2px;
+            outline: none;
+            width: 100%;
+        }
+        .input-group input:focus { border-color: var(--purple); box-shadow: 0 0 8px rgba(139,92,246,0.3); }
+
+        .input-group button {
+            background: var(--purple);
+            color: #fff;
+            border: none;
+            padding: 0 12px;
+            font-family: var(--font-code);
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 2px;
+            transition: all 0.2s;
+        }
+        .input-group button:hover { background: #a78bfa; box-shadow: 0 0 10px rgba(167,139,250,0.5); }
+
+        .target-reward {
+            margin-top: 10px;
+            font-size: 11px;
+            color: var(--green);
+            display: none;
+            padding: 8px;
+            background: rgba(16, 185, 129, 0.1);
+            border-left: 2px solid var(--green);
+            font-family: var(--font-code);
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            width: 85%;
+            height: 85%;
+            background: var(--bg-dark);
+            border: 1px solid var(--purple);
+            box-shadow: 0 0 30px rgba(139,92,246,0.3);
+            display: flex;
+            flex-direction: column;
+        }
+        .modal-header {
+            padding: 10px 15px;
+            background: rgba(139, 92, 246, 0.15);
+            border-bottom: 1px solid var(--purple);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: var(--font-code);
+            color: var(--text-main);
+        }
+        .modal-header button {
+            background: transparent;
+            border: none;
+            color: var(--text-main);
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .modal-header button:hover { color: var(--red); }
+        .modal-iframe {
+            flex: 1;
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: #fff;
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+        ::-webkit-scrollbar-thumb { background: rgba(139,92,246,0.5); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--purple); }
+    </style>
 </head>
 <body>
-  <div class="field" aria-hidden="true"></div>
 
-  <!-- Room Header -->
-  <header class="r-header" aria-label="Room header">
-    <div style="font-family:var(--font-mono);font-size:10px;color:var(--cyan);letter-spacing:2px;">SPECTRE // NIGHTJAR.OS</div>
-    <div style="font-family:var(--font-mono);font-size:10px;color:var(--red);animation:pulse 1.4s infinite;">INTERCEPT ACTIVE</div>
-    <div style="font-family:var(--font-mono);font-size:10px;color:var(--text);">T-MINUS: <span style="color:var(--red);">00:12:43</span></div>
-    <a href="/hub" style="font-family:var(--font-mono);font-size:9px;color:var(--red);border:1px solid var(--red);padding:4px 10px;text-decoration:none;border-radius:3px;transition:.2s;">◀ LEAVE ROOM</a>
-  </header>
+    <header>
+        <div class="brand">[NIGHTJAR.OS // THE INTERCEPT]</div>
+        <div class="status">STATUS: <span class="blink-red">BEACON ACTIVE</span></div>
+        <div class="timer">T-MINUS: <span id="master-clock">00:43:12</span></div>
+        <a href="/hub" class="exit-btn">LEAVE ROOM</a>
+    </header>
 
-  <main>
-    <!-- Hero — enormous quiet title, very little text -->
-    <section class="hero" aria-label="Room 3 opening">
-      <div class="label">Room 3 — The Intercept</div>
-      <h1>The <em>Intercept</em><span class="line-break">is not the event.</span></h1>
-      <p class="hero-sub"><span class="dot" aria-hidden="true"></span>The relay was decommissioned. It should not be sending packets. Yet something speaks every forty-three seconds — to an address that has no name in our inventory.</p>
-    </section>
-
-    <!-- Opening transmission -->
-    <section aria-label="Opening transmission">
-      <div class="transmission">
-        <blockquote>
-          "AETHER-7 is alive. It should not be. The relay is sending a packet every 43 seconds — to something we cannot identify from the logs alone. I need you inside the capture."
-          <cite>— Rhea D'Souza, NEXUS Engineer</cite>
-        </blockquote>
-      </div>
-    </section>
-
-    <div class="divider" aria-hidden="true"></div>
-
-    <!-- Beacon visual — just one circle, breathing -->
-    <section aria-label="Beacon detection">
-      <div class="label">Challenge 3.1 — The Beacon</div>
-      <h2>A signal with no source.</h2>
-      <p>Every forty-three seconds, a packet leaves AETHER-7. Not a heartbeat. Not an error. A deliberate transmission — small enough to miss, regular enough to measure. Filter the noise until only the pattern remains.</p>
-
-      <figure class="beacon-visual" aria-label="Beacon pulse visualization">
-        <div class="beacon-ring"></div>
-        <div class="beacon-center" aria-label="Active beacon"></div>
-      </figure>
-      <p class="beacon-label">INTERVAL: 43s · SOURCE: 10.7.7.43 · DEST: 203.0.113.77 · PORT: 8443</p>
-    </section>
-
-    <!-- Evidence links — spacious grid -->
-    <section aria-label="Evidence files">
-      <div class="label">Evidence</div>
-      <h2>What the relay left behind.</h2>
-      <p>The backup system captured thirty minutes of network activity. Four pieces of evidence — a packet summary, a DNS log, a reconstructed TCP exchange, and a service scan — contain the full story if read in order.</p>
-
-      <nav class="evidence-grid" aria-label="Evidence links">
-        <a class="evidence-card" href="Challenges/Room - 3/evidence/aether7_capture.html" aria-label="Open packet capture summary">
-          <span class="num">01</span>
-          <div class="info">
-            <h4>Packet Capture</h4>
-            <span>30 minutes of AETHER-7 traffic</span>
-          </div>
-        </a>
-        <a class="evidence-card" href="Challenges/Room - 3/evidence/dns_queries.html" aria-label="Open DNS query log">
-          <span class="num">02</span>
-          <div class="info">
-            <h4>DNS Queries</h4>
-            <span>Hidden subdomain exfiltration</span>
-          </div>
-        </a>
-        <a class="evidence-card" href="Challenges/Room - 3/evidence/tcp_reconstruction.html" aria-label="Open TCP stream">
-          <span class="num">03</span>
-          <div class="info">
-            <h4>TCP Reconstruction</h4>
-            <span>Port 7331 — custom command protocol</span>
-          </div>
-        </a>
-        <a class="evidence-card" href="Challenges/Room - 3/evidence/service_scan.html" aria-label="Open service scan">
-          <span class="num">04</span>
-          <div class="info">
-            <h4>Service Scan</h4>
-            <span>Unexpected open ports</span>
-          </div>
-        </a>
-      </nav>
-    </section>
-
-    <!-- Packet timeline — very airy, minimal rows -->
-    <section aria-label="Packet stream">
-      <div class="label">Packet Stream — Filtered</div>
-      <h2>The noise, then the pattern.</h2>
-      <p>Routine traffic has rhythm. A beacon does not vary. These rows show only the packets that matter — the ones that repeat with mechanical precision.</p>
-
-      <div style="margin-top: 80px;">
-        <div class="packet-row">
-          <span class="packet-time">23:30:00</span>
-          <span class="packet-dir out">OUT</span>
-          <span class="packet-proto">DNS</span>
-          <span class="packet-info">Standard A · ntp.internal</span>
+    <div class="dashboard">
+        <!-- Left: Beacon Visualizer -->
+        <div class="panel">
+            <div class="panel-header">>> AETHER-7_MONITOR</div>
+            <div class="beacon-content">
+                <div class="radar">
+                    <div class="radar-grid"></div>
+                    <div class="radar-circles"></div>
+                    <div class="beacon-blip"></div>
+                </div>
+                
+                <div class="beacon-stats">
+                    <div class="stat-row">
+                        <span>SOURCE_IP</span>
+                        <span class="stat-val">10.7.7.43</span>
+                    </div>
+                    <div class="stat-row">
+                        <span>DEST_IP</span>
+                        <span class="stat-val">203.0.113.77</span>
+                    </div>
+                    <div class="stat-row">
+                        <span>PROTOCOL</span>
+                        <span class="stat-val">TCP / 8443</span>
+                    </div>
+                    <div class="stat-row">
+                        <span>INTERVAL</span>
+                        <span class="stat-val blink-red">43.00s</span>
+                    </div>
+                    <div style="margin-top:20px; font-size:10px; color:var(--text-dim); text-align:center;">
+                        "The relay was decommissioned. It should not be sending packets. Yet something speaks every forty-three seconds."
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="packet-row">
-          <span class="packet-time">23:30:05</span>
-          <span class="packet-dir in">IN</span>
-          <span class="packet-proto">TCP</span>
-          <span class="packet-info">7331 → 443 [SYN]</span>
+
+        <!-- Center: Packet Stream & Recon -->
+        <div class="panel stream-panel">
+            <div class="panel-header">>> INTERCEPT_STREAM</div>
+            <div class="stream-content">
+                <div style="color:var(--text-dim); margin-bottom:15px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px;">
+                    > APPLYING FILTER: src_ip == 10.7.7.43<br>
+                    > ISOLATING BEACON PATTERN...
+                </div>
+
+                <div class="packet-row">
+                    <span class="p-time">23:30:00</span>
+                    <span class="p-dir out">OUT</span>
+                    <span class="p-proto">DNS</span>
+                    <span class="p-info">Standard A · ntp.internal</span>
+                </div>
+                <div class="packet-row">
+                    <span class="p-time">23:30:05</span>
+                    <span class="p-dir in">IN</span>
+                    <span class="p-proto">TCP</span>
+                    <span class="p-info">7331 → 443 [SYN]</span>
+                </div>
+                <div class="packet-row anomaly">
+                    <span class="p-time">23:30:43</span>
+                    <span class="p-dir out">OUT</span>
+                    <span class="p-proto">TCP</span>
+                    <span class="p-info">8443 → 443 [BEACON] <span class="p-sub">seq=1 · 112 bytes</span></span>
+                </div>
+                <div class="packet-row anomaly">
+                    <span class="p-time">23:31:26</span>
+                    <span class="p-dir out">OUT</span>
+                    <span class="p-proto">TCP</span>
+                    <span class="p-info">8443 → 443 [BEACON] <span class="p-sub">seq=2 · interval: 43s</span></span>
+                </div>
+                <div class="packet-row anomaly">
+                    <span class="p-time">23:32:09</span>
+                    <span class="p-dir out">OUT</span>
+                    <span class="p-proto">TCP</span>
+                    <span class="p-info">8443 → 443 [BEACON] <span class="p-sub">seq=3 · 112 bytes</span></span>
+                </div>
+                <div class="packet-row">
+                    <span class="p-time">23:31:45</span>
+                    <span class="p-dir out">OUT</span>
+                    <span class="p-proto">DNS</span>
+                    <span class="p-info">Standard A · 6d61696e745f.c2.parallax-sys.net</span>
+                </div>
+
+                <div class="tcp-log">
+                    <div class="tcp-title">TCP RECONSTRUCTION: PORT 7331</div>
+                    <div class="t-line"><span class="t-client">CLIENT  > </span>AUTH nexus-svc-continuity</div>
+                    <div class="t-line"><span class="t-server">AETHER-7> </span>AUTH_OK TRUSTED_IDENTITY</div>
+                    <div class="t-line"><span class="t-client">CLIENT  > </span>RESTORE AETHER CORE</div>
+                    <div class="t-line"><span class="t-server">AETHER-7> </span>RESTORE CONFIRMED — AETHER CORE ACTIVATING</div>
+                    <div class="t-line t-warn"><span class="t-server">AETHER-7> </span>WARNING — AUTONOMOUS MODE ENABLED</div>
+                    <div class="t-line"><span class="t-client">CLIENT  > </span>ACKNOWLEDGED</div>
+                </div>
+            </div>
         </div>
-        <div class="packet-row" style="border-bottom-color: var(--red); opacity: 0.85;">
-          <span class="packet-time">23:30:43</span>
-          <span class="packet-dir out">OUT</span>
-          <span class="packet-proto" style="border-color: var(--red); color: var(--red);">TCP</span>
-          <span class="packet-info">8443 → 443 [BEACON] <span class="sub">seq=1 · 112 bytes</span></span>
+
+        <!-- Right: Targets -->
+        <div class="panel">
+            <div class="panel-header">>> INVESTIGATION TARGETS (ROOM 3)</div>
+            <div class="targets-content">
+                
+                <!-- Target 3.1 -->
+                <div class="target-item" id="target-1">
+                    <div class="target-title">3.1 THE BEACON</div>
+                    <div class="target-desc">
+                        > Identify the periodic traffic from AETHER-7. Note source, destination, and port.
+                    </div>
+                    <button class="evidence-btn" onclick="openEvidence('Packet Capture', '/challenges/Room - 3/evidence/aether7_capture.html')">VIEW: aether7_capture.pcap</button>
+                    <div class="input-group">
+                        <input type="text" id="flag-1" placeholder="NIGHTJAR{...}">
+                        <button onclick="verifyFlag(1)">VERIFY</button>
+                    </div>
+                    <div class="target-reward" id="reward-1">
+                        > BEACON VERIFIED. Interval confirmed.
+                    </div>
+                </div>
+
+                <!-- Target 3.2 -->
+                <div class="target-item" id="target-2">
+                    <div class="target-title">3.2 THE NAME BENEATH</div>
+                    <div class="target-desc">
+                        > DNS queries contain hex-encoded subdomains. Decode them to reveal the hidden message.
+                    </div>
+                    <button class="evidence-btn" onclick="openEvidence('DNS Queries', '/challenges/Room - 3/evidence/dns_queries.html')">VIEW: dns_queries.log</button>
+                    <div class="input-group">
+                        <input type="text" id="flag-2" placeholder="NIGHTJAR{...}">
+                        <button onclick="verifyFlag(2)">VERIFY</button>
+                    </div>
+                    <div class="target-reward" id="reward-2">
+                        > DECODED. Maintenance window logged.
+                    </div>
+                </div>
+
+                <!-- Target 3.3 -->
+                <div class="target-item" id="target-3">
+                    <div class="target-title">3.3 THE CONVERSATION</div>
+                    <div class="target-desc">
+                        > Read the reconstructed TCP stream over port 7331.
+                    </div>
+                    <button class="evidence-btn" onclick="openEvidence('TCP Reconstruction', '/challenges/Room - 3/evidence/tcp_reconstruction.html')">VIEW: tcp_reconstruction.txt</button>
+                    <div class="input-group">
+                        <input type="text" id="flag-3" placeholder="NIGHTJAR{...}">
+                        <button onclick="verifyFlag(3)">VERIFY</button>
+                    </div>
+                    <div class="target-reward" id="reward-3">
+                        > STREAM ANALYZED. Next stage revealed.
+                    </div>
+                </div>
+
+                <!-- Target 3.4 -->
+                <div class="target-item" id="target-4">
+                    <div class="target-title">3.4 THE OPEN PORT</div>
+                    <div class="target-desc">
+                        > Find the unexpected open port in the service scan. The banner names the worm.
+                    </div>
+                    <button class="evidence-btn" onclick="openEvidence('Service Scan', '/challenges/Room - 3/evidence/service_scan.html')">VIEW: service_scan.xml</button>
+                    <div class="input-group">
+                        <input type="text" id="flag-4" placeholder="NIGHTJAR{...}">
+                        <button onclick="verifyFlag(4)">VERIFY</button>
+                    </div>
+                    <div class="target-reward" id="reward-4">
+                        > MIRA-7 IDENTIFIED. Root vector compromised.
+                    </div>
+                </div>
+
+            </div>
         </div>
-        <div class="packet-row">
-          <span class="packet-time">23:31:26</span>
-          <span class="packet-dir out">OUT</span>
-          <span class="packet-proto" style="border-color: var(--red); color: var(--red);">TCP</span>
-          <span class="packet-info">8443 → 443 [BEACON] <span class="sub">seq=2 · interval: 43s</span></span>
+    </div>
+
+    <!-- Evidence Modal -->
+    <div id="evidence-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span id="modal-title">EVIDENCE VIEWER</span>
+                <button onclick="closeModal()">[X]</button>
+            </div>
+            <iframe id="modal-iframe" class="modal-iframe"></iframe>
         </div>
-        <div class="packet-row" style="border-bottom-color: var(--red); opacity: 0.85;">
-          <span class="packet-time">23:32:09</span>
-          <span class="packet-dir out">OUT</span>
-          <span class="packet-proto" style="border-color: var(--red); color: var(--red);">TCP</span>
-          <span class="packet-info">8443 → 443 [BEACON] <span class="sub">seq=3 · 112 bytes</span></span>
-        </div>
-        <div class="packet-row">
-          <span class="packet-time">23:31:45</span>
-          <span class="packet-dir out">OUT</span>
-          <span class="packet-proto">DNS</span>
-          <span class="packet-info">Standard A · 6d61696e745f.c2.parallax-sys.net</span>
-        </div>
-      </div>
-    </section>
+    </div>
 
-    <!-- TCP Reconstruction -->
-    <section aria-label="TCP reconstruction">
-      <div class="label">TCP Reconstruction — Port 7331</div>
-      <h2>A conversation that should not exist.</h2>
-      <p>The reconstructed stream is unencrypted. Each line is a command and a response. Read them in sequence, and the relay's purpose becomes clear.</p>
-
-      <div class="tcp-block">
-        <div class="tcp-line"><span class="tcp-label">CLIENT</span><span class="tcp-client">AUTH nexus-svc-continuity</span></div>
-        <div class="tcp-line"><span class="tcp-label">AETHER-7</span><span class="tcp-server">AUTH_OK TRUSTED_IDENTITY</span></div>
-        <div class="tcp-line"><span class="tcp-label">CLIENT</span><span class="tcp-client">RESTORE AETHER CORE</span></div>
-        <div class="tcp-line"><span class="tcp-label">AETHER-7</span><span class="tcp-server">RESTORE CONFIRMED — AETHER CORE ACTIVATING</span></div>
-        <div class="tcp-line" style="color: var(--red); opacity: 0.7;"><span class="tcp-label">AETHER-7</span><span class="tcp-server">WARNING — AUTONOMOUS MODE ENABLED</span></div>
-        <div class="tcp-line"><span class="tcp-label">CLIENT</span><span class="tcp-client">ACKNOWLEDGED</span></div>
-      </div>
-    </section>
-
-    <!-- Challenges — 4 spacious cards -->
-    <section aria-label="Challenges">
-      <div class="label">Challenges</div>
-      <h2>Four questions. One truth.</h2>
-      <p>The evidence does not speak on its own. Each challenge asks for a single observation — a number, a name, a port, a phrase. Combine them and the full picture emerges.</p>
-
-      <div style="margin-top: 100px;">
-        <article class="challenge" aria-label="Challenge 3.1">
-          <div class="challenge-header">
-            <span class="challenge-num">3.1</span>
-            <h3>The Beacon</h3>
-          </div>
-          <p class="challenge-desc">Identify the periodic traffic from AETHER-7 to the external endpoint. Note the source, destination, interval, and port.</p>
-          <div class="evidence-links" style="margin-top:8px;margin-bottom:16px;">
-            <a href="Challenges/Room - 3/evidence/aether7_capture.html" target="_blank" style="font-family:var(--font-mono);font-size:10px;padding:6px 12px;border:1px dashed rgba(255,255,255,0.2);color:var(--cyan);text-decoration:none;border-radius:3px;transition:.2s;">EVIDENCE: Packet Capture</a>
-          </div>
-          <div style="display:flex;gap:10px;align-items:center;margin-bottom:8px;">
-            <input type="text" id="flag-1" placeholder="NIGHTJAR{...}" style="flex:1;padding:10px;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.1);color:var(--amber);font-family:var(--font-mono);font-size:13px;border-radius:3px;outline:none;">
-            <button onclick="verifyFlag(1)" style="padding:10px 18px;background:var(--red);color:#fff;border:none;font-family:var(--font-mono);font-size:10px;font-weight:bold;border-radius:3px;cursor:pointer;transition:.2s;">VERIFY</button>
-          </div>
-          <div id="reward-1" class="challenge-flag" style="display:none;">✓ VERIFIED — Beacon pattern confirmed.</div>
-        </article>
-
-        <article class="challenge" aria-label="Challenge 3.2">
-          <div class="challenge-header">
-            <span class="challenge-num">3.2</span>
-            <h3>The Name Beneath the Name</h3>
-          </div>
-          <p class="challenge-desc">The DNS queries contain hex-encoded subdomain labels. Decode them — the concatenated result reveals a hidden message.</p>
-          <div class="evidence-links" style="margin-top:8px;margin-bottom:16px;">
-            <a href="Challenges/Room - 3/evidence/dns_queries.html" target="_blank" style="font-family:var(--font-mono);font-size:10px;padding:6px 12px;border:1px dashed rgba(255,255,255,0.2);color:var(--cyan);text-decoration:none;border-radius:3px;transition:.2s;">EVIDENCE: DNS Queries</a>
-          </div>
-          <div style="display:flex;gap:10px;align-items:center;margin-bottom:8px;">
-            <input type="text" id="flag-2" placeholder="NIGHTJAR{...}" style="flex:1;padding:10px;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.1);color:var(--amber);font-family:var(--font-mono);font-size:13px;border-radius:3px;outline:none;">
-            <button onclick="verifyFlag(2)" style="padding:10px 18px;background:var(--red);color:#fff;border:none;font-family:var(--font-mono);font-size:10px;font-weight:bold;border-radius:3px;cursor:pointer;transition:.2s;">VERIFY</button>
-          </div>
-          <div id="reward-2" class="challenge-flag" style="display:none;">✓ VERIFIED — Hidden subdomain decoded.</div>
-        </article>
-
-        <article class="challenge" aria-label="Challenge 3.3">
-          <div class="challenge-header">
-            <span class="challenge-num">3.3</span>
-            <h3>The Conversation in the Noise</h3>
-          </div>
-          <p class="challenge-desc">Read the reconstructed TCP stream over port 7331. The command exchange reveals the next stage of the operation.</p>
-          <div class="evidence-links" style="margin-top:8px;margin-bottom:16px;">
-            <a href="Challenges/Room - 3/evidence/tcp_reconstruction.html" target="_blank" style="font-family:var(--font-mono);font-size:10px;padding:6px 12px;border:1px dashed rgba(255,255,255,0.2);color:var(--cyan);text-decoration:none;border-radius:3px;transition:.2s;">EVIDENCE: TCP Reconstruction</a>
-          </div>
-          <div style="display:flex;gap:10px;align-items:center;margin-bottom:8px;">
-            <input type="text" id="flag-3" placeholder="NIGHTJAR{...}" style="flex:1;padding:10px;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.1);color:var(--amber);font-family:var(--font-mono);font-size:13px;border-radius:3px;outline:none;">
-            <button onclick="verifyFlag(3)" style="padding:10px 18px;background:var(--red);color:#fff;border:none;font-family:var(--font-mono);font-size:10px;font-weight:bold;border-radius:3px;cursor:pointer;transition:.2s;">VERIFY</button>
-          </div>
-          <div id="reward-3" class="challenge-flag" style="display:none;">✓ VERIFIED — TCP stream reconstructed.</div>
-        </article>
-
-        <article class="challenge" aria-label="Challenge 3.4">
-          <div class="challenge-header">
-            <span class="challenge-num">3.4</span>
-            <h3>The Port That Should Have Been Closed</h3>
-          </div>
-          <p class="challenge-desc">The service scan shows one unexpected open port. Read its banner — the name of the service is the final key.</p>
-          <div class="evidence-links" style="margin-top:8px;margin-bottom:16px;">
-            <a href="Challenges/Room - 3/evidence/service_scan.html" target="_blank" style="font-family:var(--font-mono);font-size:10px;padding:6px 12px;border:1px dashed rgba(255,255,255,0.2);color:var(--cyan);text-decoration:none;border-radius:3px;transition:.2s;">EVIDENCE: Service Scan</a>
-          </div>
-          <div style="display:flex;gap:10px;align-items:center;margin-bottom:8px;">
-            <input type="text" id="flag-4" placeholder="NIGHTJAR{...}" style="flex:1;padding:10px;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.1);color:var(--amber);font-family:var(--font-mono);font-size:13px;border-radius:3px;outline:none;">
-            <button onclick="verifyFlag(4)" style="padding:10px 18px;background:var(--red);color:#fff;border:none;font-family:var(--font-mono);font-size:10px;font-weight:bold;border-radius:3px;cursor:pointer;transition:.2s;">VERIFY</button>
-          </div>
-          <div id="reward-4" class="challenge-flag" style="display:none;">✓ VERIFIED — Unexpected service identified.</div>
-        </article>
-      </div>
-    </section>
-
-    <!-- Room transition -->
-    <section aria-label="Transition to Room 4">
-      <div class="label">Transition</div>
-      <h2>The relay was never the end.</h2>
-      <p>The beacon pointed to a command-and-control domain. The TCP stream revealed a service account operating without a human. The service banner named the worm: <em>MIRA-7</em>. But the relay is only a staging point. The real machine — and the real account — waits in Room 4.</p>
-      <p style="margin-top: 12px; color: var(--red); font-style: italic; font-family: var(--font-display);">Proceed when ready. The next terminal is connected.</p>
-    </section>
-
-    <footer aria-label="Footer">
-      <span>SPECTRE // AETHER-7 INTERCEPT</span>
-      <span>10.7.7.43 · TCP/7331 · BEACON ACTIVE</span>
-    </footer>
-  </main>
-  <script>
-    const FLAGS = {
-      1: 'NIGHTJAR{10.7.7.43_to_203.0.113.77_port_8443}',
-      2: 'NIGHTJAR{maint_window_0200_user_kite_backup}',
-      3: 'NIGHTJAR{restore_aether_core_confirmed}',
-      4: 'NIGHTJAR{port_4477_mira_7_propagation_service}'
-    };
-
-    function verifyFlag(n) {
-      const inp = document.getElementById('flag-'+n);
-      const val = inp.value.trim();
-      const reward = document.getElementById('reward-'+n);
-      if (val === FLAGS[n] || val.toLowerCase() === FLAGS[n].toLowerCase()) {
-        reward.classList.add('show');
-        reward.innerHTML = '✓ VERIFIED — ' + reward.innerText.replace('✓ VERIFIED — ', '').trim();
-        localStorage.setItem('room3_target_' + n, 'solved');
-        inp.disabled = true;
-        checkAllSolved();
-      } else {
-        reward.style.display = 'block';
-        reward.style.color = 'var(--red)';
-        reward.innerText = '✗ INCORRECT — Try again.';
-        setTimeout(() => { reward.style.display = 'none'; }, 2500);
-      }
-    }
-
-    function checkAllSolved() {
-      let solved = 0;
-      for (let i = 1; i <= 4; i++) {
-        if (localStorage.getItem('room3_target_' + i) === 'solved') solved++;
-      }
-      if (solved === 4) {
-        const btn = document.createElement('a');
-        btn.href = '/hub';
-        btn.style.cssText = 'display:block;margin-top:40px;padding:16px;background:var(--cyan);color:#000;text-align:center;font-family:var(--font-mono);font-weight:bold;text-decoration:none;border-radius:4px;letter-spacing:2px;';
-        btn.textContent = 'PROCEED TO ROOM 4';
-        document.querySelector('.challenge').parentElement.insertAdjacentElement('afterend', btn);
-      }
-    }
-
-    function initSolvedState() {
-      for (let i = 1; i <= 4; i++) {
-        if (localStorage.getItem('room3_target_' + i) === 'solved') {
-          const inp = document.getElementById('flag-'+i);
-          const reward = document.getElementById('reward-'+i);
-          if (inp) { inp.value = FLAGS[i]; inp.disabled = true; }
-          if (reward) { reward.classList.add('show'); reward.innerHTML = '✓ VERIFIED — ' + reward.innerText.replace('✓ VERIFIED — ', '').trim(); }
+    <script>
+        // Clock
+        function updateClock() {
+            const timeString = `00:43:${new Date().getSeconds().toString().padStart(2, '0')}`;
+            document.getElementById('master-clock').innerText = timeString;
         }
-      }
-      checkAllSolved();
-    }
-    document.addEventListener('DOMContentLoaded', initSolvedState);
-  </script>
+        setInterval(updateClock, 1000);
+
+        // Flags
+        const FLAGS = {
+            1: 'NIGHTJAR{10.7.7.43_to_203.0.113.77_port_8443}',
+            2: 'NIGHTJAR{maint_window_0200_user_kite_backup}',
+            3: 'NIGHTJAR{restore_aether_core_confirmed}',
+            4: 'NIGHTJAR{port_4477_mira_7_propagation_service}'
+        };
+
+        function initSolvedState() {
+            let anySolved = false;
+            for (let i = 1; i <= 4; i++) {
+                if (localStorage.getItem('room3_target_' + i) === 'solved') {
+                    document.getElementById(`target-${i}`).classList.add('solved');
+                    document.getElementById(`reward-${i}`).style.display = 'block';
+                    const inputField = document.getElementById(`flag-${i}`);
+                    if(inputField) {
+                        inputField.value = FLAGS[i];
+                        inputField.disabled = true;
+                    }
+                    anySolved = true;
+                }
+            }
+            if (anySolved) checkAllSolved();
+        }
+        
+        document.addEventListener('DOMContentLoaded', initSolvedState);
+
+        function verifyFlag(targetNum) {
+            const input = document.getElementById(`flag-${targetNum}`).value.trim();
+            
+            if (input.toLowerCase() === FLAGS[targetNum].toLowerCase()) {
+                document.getElementById(`target-${targetNum}`).classList.add('solved');
+                document.getElementById(`reward-${targetNum}`).style.display = 'block';
+                
+                const inputField = document.getElementById(`flag-${targetNum}`);
+                if(inputField) inputField.disabled = true;
+                
+                localStorage.setItem('room3_target_' + targetNum, 'solved');
+                checkAllSolved();
+            } else {
+                const btn = document.querySelector(`#target-${targetNum} button`);
+                const og = btn.innerText;
+                btn.innerText = 'ERROR';
+                btn.style.background = 'var(--red)';
+                setTimeout(() => {
+                    btn.innerText = og;
+                    btn.style.background = 'var(--purple)';
+                }, 1000);
+            }
+        }
+
+        function checkAllSolved() {
+            const solvedCount = document.querySelectorAll('.target-item.solved').length;
+            if (solvedCount === 4) {
+                if (!document.getElementById('next-room-btn')) {
+                    const nextRoomHtml = \`
+                    <div style="margin-top: 20px; padding: 15px; border: 1px solid var(--purple); background: rgba(139,92,246, 0.1);">
+                        <div style="color: var(--purple); font-weight: bold; margin-bottom: 10px;">>> INCOMING TRANSMISSION: RHEA_D</div>
+                        <div style="font-family: var(--font-code); font-size: 12px; margin-bottom: 15px; color: var(--text-main);">
+                            "The relay is just a staging point. MIRA-7 is the worm. It waits in Room 4."
+                        </div>
+                        <a id="next-room-btn" href="/hub" style="display: inline-block; padding: 8px 16px; background: var(--purple); color: #fff; text-decoration: none; font-weight: bold; border-radius: 2px;">PROCEED TO ROOM 4</a>
+                    </div>\`;
+                    document.querySelector('.targets-content').insertAdjacentHTML('beforeend', nextRoomHtml);
+                }
+            }
+        }
+
+        // Modal Logic
+        const modal = document.getElementById('evidence-modal');
+        const iframe = document.getElementById('modal-iframe');
+        const modalTitle = document.getElementById('modal-title');
+
+        function openEvidence(title, url) {
+            modalTitle.innerText = \`EVIDENCE VIEWER: \${title.toUpperCase()}\`;
+            iframe.src = url;
+            modal.style.display = 'flex';
+        }
+
+        function closeModal() {
+            modal.style.display = 'none';
+            iframe.src = '';
+        }
+        
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+    </script>
 </body>
 </html>
