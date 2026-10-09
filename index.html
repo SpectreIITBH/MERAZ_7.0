@@ -545,12 +545,12 @@ $('room-content').innerHTML = '<div style="color:var(--cyan);text-align:center;p
 $('flag-input').value = '';
 $('flag-result').textContent = '';
 
-fetch('/challenges/Room - '+(n.i+1)+'/README.md')
+fetch('/room'+(n.i+1)+'.html')
     .then(r => r.ok ? r.text() : Promise.reject('Room data not found on server.'))
     .then(text => {
-        // Fix relative evidence links
+        // Fix relative evidence links in the loaded HTML
         text = text.replace(/evidence\//g, '/challenges/Room - '+(n.i+1)+'/evidence/');
-        $('room-content').innerHTML = marked.parse(text);
+        $('room-content').innerHTML = text;
     })
     .catch(err => {
         $('room-content').innerHTML = '<div style="color:var(--red);text-align:center;padding:40px;font-family:\'Press Start 2P\'">ERROR: ' + err + '</div>';
