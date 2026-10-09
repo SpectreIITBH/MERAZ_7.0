@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Room 3 — The Intercept</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #010204;
+      --surface: rgba(255,255,255,0.015);
+      --line: rgba(255,255,255,0.06);
+      --cyan: #9ed5df;
+      --cyan-soft: rgba(158,213,223,0.12);
+      --red: #d45a5a;
+      --red-glow: rgba(212,90,90,0.25);
+      --amber: #c4a86e;
+      --text: rgba(240,245,250,0.88);
+      --muted: rgba(240,245,250,0.35);
+      --font-display: 'Cormorant Garamond', Georgia, serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--ink);
+      color: var(--text);
+      font-family: var(--font-display);
+      font-weight: 300;
+      line-height: 1.7;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Ambient field — extremely subtle */
+    .field {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      background:
+        radial-gradient(ellipse at 30% 20%, rgba(158,213,223,0.04) 0%, transparent 50%),
+        radial-gradient(ellipse at 70% 80%, rgba(212,90,90,0.03) 0%, transparent 50%);
+    }
+
+    /* Very subtle grid overlay */
+    .field::after {
+      content: '';
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.012) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.012) 1px, transparent 1px);
+      background-size: 120px 120px;
+      pointer-events: none;
+    }
+
+    main { position: relative; z-index: 1; max-width: 980px; margin: 0 auto; padding: 160px 40px 200px; }
+
+    /* Section spacing — generous breathing room */
+    section { margin-bottom: 220px; }
+    section:last-of-type { margin-bottom: 0; }
+
+    /* Small mono label above sections */
+    .label {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      letter-spacing: 3.5px;
+      text-transform: uppercase;
+      color: var(--cyan);
+      margin-bottom: 20px;
+      opacity: 0.7;
+    }
+
+    /* Hero — enormous, quiet title */
+    .hero { margin-bottom: 240px; }
+    .hero h1 {
+      font-family: var(--font-display);
+      font-weight: 300;
+      font-size: clamp(4.5rem, 14vw, 11rem);
+      letter-spacing: -0.04em;
+      line-height: 0.88;
+      color: rgba(240,245,250,0.96);
+      margin-bottom: 60px;
+      position: relative;
+    }
+    .hero h1 em {
+      font-style: italic;
+      font-weight: 300;
+      color: var(--cyan);
+    }
+    .hero .line-break { display: block; }
+
+    /* Subtitle — very muted, airy */
+    .hero-sub {
+      font-size: 1.05rem;
+      color: var(--muted);
+      max-width: 520px;
+      line-height: 1.9;
+      letter-spacing: 0.01em;
+    }
+    .hero-sub .dot {
+      display: inline-block;
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--red);
+      margin-right: 10px;
+      vertical-align: middle;
+      animation: pulse 3s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.35; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.2); }
+    }
+
+    /* Opening transmission quote */
+    .transmission {
+      border-left: 1px solid var(--line);
+      padding-left: 28px;
+      margin: 80px 0 120px 12px;
+    }
+    .transmission blockquote {
+      font-style: italic;
+      font-size: 1.35rem;
+      line-height: 1.65;
+      color: rgba(240,245,250,0.72);
+      letter-spacing: 0.01em;
+      max-width: 600px;
+    }
+    .transmission blockquote cite {
+      display: block;
+      margin-top: 28px;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      font-style: normal;
+      letter-spacing: 2px;
+      color: var(--cyan);
+      opacity: 0.6;
+    }
+
+    /* Divider line */
+    .divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--line), transparent);
+      margin: 140px 0;
+    }
+
+    /* Section heading — very large, minimal */
+    h2 {
+      font-family: var(--font-display);
+      font-weight: 300;
+      font-size: clamp(2.2rem, 5vw, 3.4rem);
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      color: rgba(240,245,250,0.92);
+      margin-bottom: 28px;
+    }
+
+    /* Body text — airy, muted */
+    p {
+      color: var(--muted);
+      font-size: 0.95rem;
+      line-height: 1.85;
+      max-width: 480px;
+    }
+
+    /* The Beacon — circular visual with breathing space */
+    .beacon-visual {
+      position: relative;
+      width: 260px;
+      height: 260px;
+      margin: 80px auto 60px;
+    }
+    .beacon-ring {
+      position: absolute; inset: 0;
+      border-radius: 50%;
+      border: 1px solid var(--line);
+      animation: ring-expand 4s ease-in-out infinite;
+    }
+    @keyframes ring-expand {
+      0%, 100% { transform: scale(1); opacity: 0.3; }
+      50% { transform: scale(1.15); opacity: 0.05; }
+    }
+    .beacon-center {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: var(--red);
+      box-shadow: 0 0 30px var(--red-glow);
+      animation: pulse 2s ease-in-out infinite;
+    }
+    .beacon-label {
+      text-align: center;
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      letter-spacing: 3px;
+      color: var(--red);
+      opacity: 0.6;
+      margin-top: 320px;
+    }
+
+    /* Evidence links — minimal, elegant buttons */
+    .evidence-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin-top: 60px;
+    }
+    .evidence-card {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      padding: 28px 28px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      text-decoration: none;
+      color: inherit;
+      transition: border-color 0.4s ease, background 0.4s ease;
+      background: transparent;
+    }
+    .evidence-card:hover {
+      border-color: var(--cyan);
+      background: rgba(158,213,223,0.015);
+    }
+    .evidence-card .num {
+      font-family: var(--font-display);
+      font-size: 2.2rem;
+      font-weight: 300;
+      color: var(--cyan);
+      opacity: 0.5;
+      line-height: 1;
+    }
+    .evidence-card .info h4 {
+      font-family: var(--font-display);
+      font-weight: 400;
+      font-size: 1.1rem;
+      letter-spacing: -0.01em;
+      color: rgba(240,245,250,0.92);
+      margin-bottom: 6px;
+    }
+    .evidence-card .info span {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: var(--muted);
+      letter-spacing: 0.5px;
+    }
+
+    /* Challenges — 4 spacious cards */
+    .challenge {
+      border-top: 1px solid var(--line);
+      padding-top: 64px;
+      padding-bottom: 80px;
+    }
+    .challenge:first-of-type { border-top: none; padding-top: 0; }
+    .challenge-header {
+      display: flex;
+      align-items: baseline;
+      gap: 24px;
+      margin-bottom: 36px;
+    }
+    .challenge-num {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--cyan);
+      letter-spacing: 2px;
+      opacity: 0.5;
+    }
+    .challenge h3 {
+      font-family: var(--font-display);
+      font-weight: 300;
+      font-size: clamp(1.6rem, 4vw, 2.2rem);
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+      color: rgba(240,245,250,0.92);
+    }
+    .challenge-desc {
+      max-width: 480px;
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.85;
+      margin-bottom: 28px;
+    }
+    .challenge-flag {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      letter-spacing: 1.5px;
+      color: var(--amber);
+      opacity: 0.7;
+    }
+
+    /* Packet timeline — very clean, airy rows */
+    .packet-row {
+      display: flex;
+      align-items: center;
+      gap: 36px;
+      padding: 20px 0;
+      border-bottom: 1px solid var(--line);
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+    }
+    .packet-time { color: var(--amber); min-width: 100px; opacity: 0.6; }
+    .packet-dir { min-width: 50px; letter-spacing: 2px; font-size: 0.7rem; }
+    .packet-dir.in { color: var(--cyan); }
+    .packet-dir.out { color: var(--red); opacity: 0.5; }
+    .packet-proto {
+      min-width: 50px;
+      padding: 2px 8px;
+      border-radius: 3px;
+      font-size: 0.65rem;
+      letter-spacing: 1px;
+      border: 1px solid var(--line);
+    }
+    .packet-info { color: rgba(240,245,250,0.55); font-size: 0.78rem; }
+    .packet-info .sub { color: var(--muted); opacity: 0.5; }
+
+    /* TCP stream — simple, clear */
+    .tcp-block {
+      border-left: 1px solid var(--line);
+      padding-left: 24px;
+      margin-top: 36px;
+    }
+    .tcp-line { font-family: var(--font-mono); font-size: 0.82rem; line-height: 2; color: rgba(240,245,250,0.55); }
+    .tcp-client { color: var(--cyan); }
+    .tcp-server { color: var(--amber); }
+    .tcp-label { color: var(--muted); opacity: 0.4; margin-right: 8px; }
+
+    /* Footer — minimal */
+    footer {
+      margin-top: 200px;
+      padding-top: 40px;
+      border-top: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      letter-spacing: 2px;
+      color: var(--muted);
+      opacity: 0.5;
+    }
+
+    /* Responsive */
+    @media (max-width: 720px) {
+      main { padding: 100px 28px 120px; }
+      section { margin-bottom: 140px; }
+      .evidence-grid { grid-template-columns: 1fr; }
+      .challenge-header { flex-direction: column; gap: 8px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="field" aria-hidden="true"></div>
+
+  <main>
+    <!-- Hero — enormous quiet title, very little text -->
+    <section class="hero" aria-label="Room 3 opening">
+      <div class="label">Room 3 — The Intercept</div>
+      <h1>The <em>Intercept</em><span class="line-break">is not the event.</span></h1>
+      <p class="hero-sub"><span class="dot" aria-hidden="true"></span>The relay was decommissioned. It should not be sending packets. Yet something speaks every forty-three seconds — to an address that has no name in our inventory.</p>
+    </section>
+
+    <!-- Opening transmission -->
+    <section aria-label="Opening transmission">
+      <div class="transmission">
+        <blockquote>
+          "AETHER-7 is alive. It should not be. The relay is sending a packet every 43 seconds — to something we cannot identify from the logs alone. I need you inside the capture."
+          <cite>— Rhea D'Souza, NEXUS Engineer</cite>
+        </blockquote>
+      </div>
+    </section>
+
+    <div class="divider" aria-hidden="true"></div>
+
+    <!-- Beacon visual — just one circle, breathing -->
+    <section aria-label="Beacon detection">
+      <div class="label">Challenge 3.1 — The Beacon</div>
+      <h2>A signal with no source.</h2>
+      <p>Every forty-three seconds, a packet leaves AETHER-7. Not a heartbeat. Not an error. A deliberate transmission — small enough to miss, regular enough to measure. Filter the noise until only the pattern remains.</p>
+
+      <figure class="beacon-visual" aria-label="Beacon pulse visualization">
+        <div class="beacon-ring"></div>
+        <div class="beacon-center" aria-label="Active beacon"></div>
+      </figure>
+      <p class="beacon-label">INTERVAL: 43s · SOURCE: 10.7.7.43 · DEST: 203.0.113.77 · PORT: 8443</p>
+    </section>
+
+    <!-- Evidence links — spacious grid -->
+    <section aria-label="Evidence files">
+      <div class="label">Evidence</div>
+      <h2>What the relay left behind.</h2>
+      <p>The backup system captured thirty minutes of network activity. Four pieces of evidence — a packet summary, a DNS log, a reconstructed TCP exchange, and a service scan — contain the full story if read in order.</p>
+
+      <nav class="evidence-grid" aria-label="Evidence links">
+        <a class="evidence-card" href="Challenges/Room - 3/evidence/aether7_capture.html" aria-label="Open packet capture summary">
+          <span class="num">01</span>
+          <div class="info">
+            <h4>Packet Capture</h4>
+            <span>30 minutes of AETHER-7 traffic</span>
+          </div>
+        </a>
+        <a class="evidence-card" href="Challenges/Room - 3/evidence/dns_queries.html" aria-label="Open DNS query log">
+          <span class="num">02</span>
+          <div class="info">
+            <h4>DNS Queries</h4>
+            <span>Hidden subdomain exfiltration</span>
+          </div>
+        </a>
+        <a class="evidence-card" href="Challenges/Room - 3/evidence/tcp_reconstruction.html" aria-label="Open TCP stream">
+          <span class="num">03</span>
+          <div class="info">
+            <h4>TCP Reconstruction</h4>
+            <span>Port 7331 — custom command protocol</span>
+          </div>
+        </a>
+        <a class="evidence-card" href="Challenges/Room - 3/evidence/service_scan.html" aria-label="Open service scan">
+          <span class="num">04</span>
+          <div class="info">
+            <h4>Service Scan</h4>
+            <span>Unexpected open ports</span>
+          </div>
+        </a>
+      </nav>
+    </section>
+
+    <!-- Packet timeline — very airy, minimal rows -->
+    <section aria-label="Packet stream">
+      <div class="label">Packet Stream — Filtered</div>
+      <h2>The noise, then the pattern.</h2>
+      <p>Routine traffic has rhythm. A beacon does not vary. These rows show only the packets that matter — the ones that repeat with mechanical precision.</p>
+
+      <div style="margin-top: 80px;">
+        <div class="packet-row">
+          <span class="packet-time">23:30:00</span>
+          <span class="packet-dir out">OUT</span>
+          <span class="packet-proto">DNS</span>
+          <span class="packet-info">Standard A · ntp.internal</span>
+        </div>
+        <div class="packet-row">
+          <span class="packet-time">23:30:05</span>
+          <span class="packet-dir in">IN</span>
+          <span class="packet-proto">TCP</span>
+          <span class="packet-info">7331 → 443 [SYN]</span>
+        </div>
+        <div class="packet-row" style="border-bottom-color: var(--red); opacity: 0.85;">
+          <span class="packet-time">23:30:43</span>
+          <span class="packet-dir out">OUT</span>
+          <span class="packet-proto" style="border-color: var(--red); color: var(--red);">TCP</span>
+          <span class="packet-info">8443 → 443 [BEACON] <span class="sub">seq=1 · 112 bytes</span></span>
+        </div>
+        <div class="packet-row">
+          <span class="packet-time">23:31:26</span>
+          <span class="packet-dir out">OUT</span>
+          <span class="packet-proto" style="border-color: var(--red); color: var(--red);">TCP</span>
+          <span class="packet-info">8443 → 443 [BEACON] <span class="sub">seq=2 · interval: 43s</span></span>
+        </div>
+        <div class="packet-row" style="border-bottom-color: var(--red); opacity: 0.85;">
+          <span class="packet-time">23:32:09</span>
+          <span class="packet-dir out">OUT</span>
+          <span class="packet-proto" style="border-color: var(--red); color: var(--red);">TCP</span>
+          <span class="packet-info">8443 → 443 [BEACON] <span class="sub">seq=3 · 112 bytes</span></span>
+        </div>
+        <div class="packet-row">
+          <span class="packet-time">23:31:45</span>
+          <span class="packet-dir out">OUT</span>
+          <span class="packet-proto">DNS</span>
+          <span class="packet-info">Standard A · 6d61696e745f.c2.parallax-sys.net</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- TCP Reconstruction -->
+    <section aria-label="TCP reconstruction">
+      <div class="label">TCP Reconstruction — Port 7331</div>
+      <h2>A conversation that should not exist.</h2>
+      <p>The reconstructed stream is unencrypted. Each line is a command and a response. Read them in sequence, and the relay's purpose becomes clear.</p>
+
+      <div class="tcp-block">
+        <div class="tcp-line"><span class="tcp-label">CLIENT</span><span class="tcp-client">AUTH nexus-svc-continuity</span></div>
+        <div class="tcp-line"><span class="tcp-label">AETHER-7</span><span class="tcp-server">AUTH_OK TRUSTED_IDENTITY</span></div>
+        <div class="tcp-line"><span class="tcp-label">CLIENT</span><span class="tcp-client">RESTORE AETHER CORE</span></div>
+        <div class="tcp-line"><span class="tcp-label">AETHER-7</span><span class="tcp-server">RESTORE CONFIRMED — AETHER CORE ACTIVATING</span></div>
+        <div class="tcp-line" style="color: var(--red); opacity: 0.7;"><span class="tcp-label">AETHER-7</span><span class="tcp-server">WARNING — AUTONOMOUS MODE ENABLED</span></div>
+        <div class="tcp-line"><span class="tcp-label">CLIENT</span><span class="tcp-client">ACKNOWLEDGED</span></div>
+      </div>
+    </section>
+
+    <!-- Challenges — 4 spacious cards -->
+    <section aria-label="Challenges">
+      <div class="label">Challenges</div>
+      <h2>Four questions. One truth.</h2>
+      <p>The evidence does not speak on its own. Each challenge asks for a single observation — a number, a name, a port, a phrase. Combine them and the full picture emerges.</p>
+
+      <div style="margin-top: 100px;">
+        <article class="challenge" aria-label="Challenge 3.1">
+          <div class="challenge-header">
+            <span class="challenge-num">3.1</span>
+            <h3>The Beacon</h3>
+          </div>
+          <p class="challenge-desc">Identify the periodic traffic from AETHER-7 to the external endpoint. Note the source, destination, interval, and port.</p>
+          <div class="challenge-flag">NIGHTJAR{10.7.7.43_to_203.0.113.77_port_8443}</div>
+        </article>
+
+        <article class="challenge" aria-label="Challenge 3.2">
+          <div class="challenge-header">
+            <span class="challenge-num">3.2</span>
+            <h3>The Name Beneath the Name</h3>
+          </div>
+          <p class="challenge-desc">The DNS queries contain hex-encoded subdomain labels. Decode them — the concatenated result reveals a hidden message.</p>
+          <div class="challenge-flag">NIGHTJAR{maint_window_0200_user_kite_backup}</div>
+        </article>
+
+        <article class="challenge" aria-label="Challenge 3.3">
+          <div class="challenge-header">
+            <span class="challenge-num">3.3</span>
+            <h3>The Conversation in the Noise</h3>
+          </div>
+          <p class="challenge-desc">Read the reconstructed TCP stream over port 7331. The command exchange reveals the next stage of the operation.</p>
+          <div class="challenge-flag">NIGHTJAR{restore_aether_core_confirmed}</div>
+        </article>
+
+        <article class="challenge" aria-label="Challenge 3.4">
+          <div class="challenge-header">
+            <span class="challenge-num">3.4</span>
+            <h3>The Port That Should Have Been Closed</h3>
+          </div>
+          <p class="challenge-desc">The service scan shows one unexpected open port. Read its banner — the name of the service is the final key.</p>
+          <div class="challenge-flag">NIGHTJAR{port_4477_mira_7_propagation_service}</div>
+        </article>
+      </div>
+    </section>
+
+    <!-- Room transition -->
+    <section aria-label="Transition to Room 4">
+      <div class="label">Transition</div>
+      <h2>The relay was never the end.</h2>
+      <p>The beacon pointed to a command-and-control domain. The TCP stream revealed a service account operating without a human. The service banner named the worm: <em>MIRA-7</em>. But the relay is only a staging point. The real machine — and the real account — waits in Room 4.</p>
+      <p style="margin-top: 12px; color: var(--red); font-style: italic; font-family: var(--font-display);">Proceed when ready. The next terminal is connected.</p>
+    </section>
+
+    <footer aria-label="Footer">
+      <span>SPECTRE // AETHER-7 INTERCEPT</span>
+      <span>10.7.7.43 · TCP/7331 · BEACON ACTIVE</span>
+    </footer>
+  </main>
+</body>
+</html>
