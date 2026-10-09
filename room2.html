@@ -41,7 +41,6 @@
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            overflow: hidden;
         }
 
         /* Scanline and CRT Flicker */
@@ -106,7 +105,6 @@
             gap: 20px;
             padding: 20px;
             flex: 1;
-            height: calc(100vh - 40px);
         }
 
         .panel {
@@ -363,7 +361,7 @@
             color: #000;
         }
         
-        .evidence-btn {
+        .evidence-btn, .evidence-btn-dl {
             background: transparent;
             border: 1px dashed var(--text-dim);
             color: var(--text-dim);
@@ -371,11 +369,18 @@
             font-family: var(--font-code);
             font-size: 11px;
             cursor: pointer;
-            margin-right: 10px;
-            margin-bottom: 10px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
         }
         
-        .evidence-btn:hover { border-color: var(--amber); color: var(--amber); }
+        .evidence-btn:hover, .evidence-btn-dl:hover { border-color: var(--amber); color: var(--amber); }
+        
+        .evidence-group {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 10px;
+        }
         
         .ch-reward {
             padding: 10px;
@@ -517,7 +522,10 @@
                         <div class="ch-desc">
                             > The Curator sent a message encoded to bypass basic filters. Export the chat dump and identify the hidden string.
                         </div>
-                        <button class="evidence-btn" onclick="window.open('/challenges/Room - 2/evidence/chat_export_2317.log', '_blank')">⬇ chat_export.log</button>
+                        <div class="evidence-group">
+                            <button class="evidence-btn" onclick="window.open('/challenges/Room - 2/evidence/chat_export_2317.log', '_blank')">⬇ chat_export.log</button>
+                            <a href="/challenges/Room - 2/evidence/chat_export_2317.log" download class="evidence-btn-dl">DL</a>
+                        </div>
                         <div class="terminal-input-group">
                             <span class="terminal-prompt">DECRYPT >></span>
                             <input type="text" id="flag-1" placeholder="NIGHTJAR{...}">
@@ -534,7 +542,10 @@
                         <div class="ch-desc">
                             > A file was dropped on the server, but only its MD5 signature was recorded in the logs: <code>5d41402abc4b2a76b9719d911017c592</code>. Which of these recovered cache files matches the hash?
                         </div>
-                        <button class="evidence-btn" onclick="window.open('/challenges/Room - 2/evidence/cache_files.zip', '_blank')">⬇ cache_files.zip</button>
+                        <div class="evidence-group">
+                            <button class="evidence-btn" onclick="window.open('/challenges/Room - 2/evidence/cache_files.zip', '_blank')">⬇ cache_files.zip</button>
+                            <a href="/challenges/Room - 2/evidence/cache_files.zip" download class="evidence-btn-dl">DL</a>
+                        </div>
                         <div class="terminal-input-group">
                             <span class="terminal-prompt">MATCH >></span>
                             <input type="text" id="flag-2" placeholder="NIGHTJAR{filename.ext}">
@@ -551,7 +562,10 @@
                         <div class="ch-desc">
                             > The Curator's avatar image has an anomalous file size. Perform a steganographic analysis on the asset to find the concealed directive.
                         </div>
-                        <button class="evidence-btn" onclick="window.open('/challenges/Room - 2/evidence/curator_avatar.jpg', '_blank')">👁 curator_avatar.jpg</button>
+                        <div class="evidence-group">
+                            <button class="evidence-btn" onclick="window.open('/challenges/Room - 2/evidence/curator_avatar.jpg', '_blank')">👁 curator_avatar.jpg</button>
+                            <a href="/challenges/Room - 2/evidence/curator_avatar.jpg" download class="evidence-btn-dl">DL</a>
+                        </div>
                         <div class="terminal-input-group">
                             <span class="terminal-prompt">EXTRACT >></span>
                             <input type="text" id="flag-3" placeholder="NIGHTJAR{...}">
@@ -568,7 +582,10 @@
                         <div class="ch-desc">
                             > Multiple messages were signed, but one signature is invalid, injected by an imposter. Identify the altered message block to find the next relay target.
                         </div>
-                        <button class="evidence-btn" onclick="window.open('/challenges/Room - 2/evidence/signed_blocks.asc', '_blank')">⬇ signed_blocks.asc</button>
+                        <div class="evidence-group">
+                            <button class="evidence-btn" onclick="window.open('/challenges/Room - 2/evidence/signed_blocks.asc', '_blank')">⬇ signed_blocks.asc</button>
+                            <a href="/challenges/Room - 2/evidence/signed_blocks.asc" download class="evidence-btn-dl">DL</a>
+                        </div>
                         <div class="terminal-input-group">
                             <span class="terminal-prompt">VERIFY >></span>
                             <input type="text" id="flag-4" placeholder="NIGHTJAR{...}">

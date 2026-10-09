@@ -37,7 +37,6 @@
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            overflow: hidden;
         }
 
         /* Scanline Overlay */
@@ -88,7 +87,6 @@
             gap: 20px;
             padding: 20px;
             flex: 1;
-            height: calc(100vh - 40px);
         }
 
         .panel {
@@ -298,8 +296,19 @@
             margin-bottom: 10px;
             display: inline-block;
             transition: 0.2s;
+            text-decoration: none;
+            text-align: center;
         }
         .evidence-btn:hover { background: var(--purple); color: #fff; }
+
+        .evidence-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .evidence-group .evidence-btn {
+            margin-bottom: 0;
+        }
 
         .input-group { display: flex; gap: 8px; }
         .input-group input {
@@ -507,7 +516,10 @@
                     <div class="target-desc">
                         > Identify the periodic traffic from AETHER-7. Note source, destination, and port.
                     </div>
-                    <button class="evidence-btn" onclick="openEvidence('Packet Capture', '/challenges/Room - 3/evidence/aether7_capture.html')">VIEW: aether7_capture.pcap</button>
+                    <div class="evidence-group">
+                        <button class="evidence-btn" onclick="openEvidence('Packet Capture', '/challenges/Room - 3/evidence/aether7_capture.html')">VIEW: aether7_capture.html</button>
+                        <a href="/challenges/Room - 3/evidence/aether7_capture.html" download class="evidence-btn">DOWNLOAD</a>
+                    </div>
                     <div class="input-group">
                         <input type="text" id="flag-1" placeholder="NIGHTJAR{...}">
                         <button onclick="verifyFlag(1)">VERIFY</button>
@@ -523,7 +535,10 @@
                     <div class="target-desc">
                         > DNS queries contain hex-encoded subdomains. Decode them to reveal the hidden message.
                     </div>
-                    <button class="evidence-btn" onclick="openEvidence('DNS Queries', '/challenges/Room - 3/evidence/dns_queries.html')">VIEW: dns_queries.log</button>
+                    <div class="evidence-group">
+                        <button class="evidence-btn" onclick="openEvidence('DNS Queries', '/challenges/Room - 3/evidence/dns_queries.html')">VIEW: dns_queries.log</button>
+                        <a href="/challenges/Room - 3/evidence/dns_queries.html" download class="evidence-btn">DOWNLOAD</a>
+                    </div>
                     <div class="input-group">
                         <input type="text" id="flag-2" placeholder="NIGHTJAR{...}">
                         <button onclick="verifyFlag(2)">VERIFY</button>
@@ -539,7 +554,10 @@
                     <div class="target-desc">
                         > Read the reconstructed TCP stream over port 7331.
                     </div>
-                    <button class="evidence-btn" onclick="openEvidence('TCP Reconstruction', '/challenges/Room - 3/evidence/tcp_reconstruction.html')">VIEW: tcp_reconstruction.txt</button>
+                    <div class="evidence-group">
+                        <button class="evidence-btn" onclick="openEvidence('TCP Reconstruction', '/challenges/Room - 3/evidence/tcp_reconstruction.html')">VIEW: tcp_reconstruction.txt</button>
+                        <a href="/challenges/Room - 3/evidence/tcp_reconstruction.html" download class="evidence-btn">DOWNLOAD</a>
+                    </div>
                     <div class="input-group">
                         <input type="text" id="flag-3" placeholder="NIGHTJAR{...}">
                         <button onclick="verifyFlag(3)">VERIFY</button>
@@ -555,7 +573,10 @@
                     <div class="target-desc">
                         > Find the unexpected open port in the service scan. The banner names the worm.
                     </div>
-                    <button class="evidence-btn" onclick="openEvidence('Service Scan', '/challenges/Room - 3/evidence/service_scan.html')">VIEW: service_scan.xml</button>
+                    <div class="evidence-group">
+                        <button class="evidence-btn" onclick="openEvidence('Service Scan', '/challenges/Room - 3/evidence/service_scan.html')">VIEW: service_scan.xml</button>
+                        <a href="/challenges/Room - 3/evidence/service_scan.html" download class="evidence-btn">DOWNLOAD</a>
+                    </div>
                     <div class="input-group">
                         <input type="text" id="flag-4" placeholder="NIGHTJAR{...}">
                         <button onclick="verifyFlag(4)">VERIFY</button>
