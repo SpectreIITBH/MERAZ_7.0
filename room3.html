@@ -292,6 +292,14 @@
       opacity: 0.7;
     }
 
+    .challenge-flag.show { display: block !important; color: var(--green); opacity: 1; }
+
+    .challenge-flag.show { display: block !important; color: var(--green) !important; opacity: 1 !important; }
+
+    /* Header */
+    .r-header { display: flex; justify-content: space-between; align-items: center; padding: 14px 40px; background: rgba(10,20,30,0.4); border-bottom: 1px solid rgba(255,255,255,0.06); font-family: var(--font-mono); font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; position: sticky; top: 0; z-index: 10; backdrop-filter: blur(8px); }
+    .r-header a { text-decoration: none; }
+
     /* Packet timeline — very clean, airy rows */
     .packet-row {
       display: flex;
@@ -354,6 +362,14 @@
 </head>
 <body>
   <div class="field" aria-hidden="true"></div>
+
+  <!-- Room Header -->
+  <header class="r-header" aria-label="Room header">
+    <div style="font-family:var(--font-mono);font-size:10px;color:var(--cyan);letter-spacing:2px;">SPECTRE // NIGHTJAR.OS</div>
+    <div style="font-family:var(--font-mono);font-size:10px;color:var(--red);animation:pulse 1.4s infinite;">INTERCEPT ACTIVE</div>
+    <div style="font-family:var(--font-mono);font-size:10px;color:var(--text);">T-MINUS: <span style="color:var(--red);">00:12:43</span></div>
+    <a href="/hub" style="font-family:var(--font-mono);font-size:9px;color:var(--red);border:1px solid var(--red);padding:4px 10px;text-decoration:none;border-radius:3px;transition:.2s;">◀ LEAVE ROOM</a>
+  </header>
 
   <main>
     <!-- Hero — enormous quiet title, very little text -->
@@ -501,7 +517,14 @@
             <h3>The Beacon</h3>
           </div>
           <p class="challenge-desc">Identify the periodic traffic from AETHER-7 to the external endpoint. Note the source, destination, interval, and port.</p>
-          <div class="challenge-flag">NIGHTJAR{10.7.7.43_to_203.0.113.77_port_8443}</div>
+          <div class="evidence-links" style="margin-top:8px;margin-bottom:16px;">
+            <a href="Challenges/Room - 3/evidence/aether7_capture.html" target="_blank" style="font-family:var(--font-mono);font-size:10px;padding:6px 12px;border:1px dashed rgba(255,255,255,0.2);color:var(--cyan);text-decoration:none;border-radius:3px;transition:.2s;">EVIDENCE: Packet Capture</a>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;margin-bottom:8px;">
+            <input type="text" id="flag-1" placeholder="NIGHTJAR{...}" style="flex:1;padding:10px;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.1);color:var(--amber);font-family:var(--font-mono);font-size:13px;border-radius:3px;outline:none;">
+            <button onclick="verifyFlag(1)" style="padding:10px 18px;background:var(--red);color:#fff;border:none;font-family:var(--font-mono);font-size:10px;font-weight:bold;border-radius:3px;cursor:pointer;transition:.2s;">VERIFY</button>
+          </div>
+          <div id="reward-1" class="challenge-flag" style="display:none;">✓ VERIFIED — Beacon pattern confirmed.</div>
         </article>
 
         <article class="challenge" aria-label="Challenge 3.2">
@@ -510,7 +533,14 @@
             <h3>The Name Beneath the Name</h3>
           </div>
           <p class="challenge-desc">The DNS queries contain hex-encoded subdomain labels. Decode them — the concatenated result reveals a hidden message.</p>
-          <div class="challenge-flag">NIGHTJAR{maint_window_0200_user_kite_backup}</div>
+          <div class="evidence-links" style="margin-top:8px;margin-bottom:16px;">
+            <a href="Challenges/Room - 3/evidence/dns_queries.html" target="_blank" style="font-family:var(--font-mono);font-size:10px;padding:6px 12px;border:1px dashed rgba(255,255,255,0.2);color:var(--cyan);text-decoration:none;border-radius:3px;transition:.2s;">EVIDENCE: DNS Queries</a>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;margin-bottom:8px;">
+            <input type="text" id="flag-2" placeholder="NIGHTJAR{...}" style="flex:1;padding:10px;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.1);color:var(--amber);font-family:var(--font-mono);font-size:13px;border-radius:3px;outline:none;">
+            <button onclick="verifyFlag(2)" style="padding:10px 18px;background:var(--red);color:#fff;border:none;font-family:var(--font-mono);font-size:10px;font-weight:bold;border-radius:3px;cursor:pointer;transition:.2s;">VERIFY</button>
+          </div>
+          <div id="reward-2" class="challenge-flag" style="display:none;">✓ VERIFIED — Hidden subdomain decoded.</div>
         </article>
 
         <article class="challenge" aria-label="Challenge 3.3">
@@ -519,7 +549,14 @@
             <h3>The Conversation in the Noise</h3>
           </div>
           <p class="challenge-desc">Read the reconstructed TCP stream over port 7331. The command exchange reveals the next stage of the operation.</p>
-          <div class="challenge-flag">NIGHTJAR{restore_aether_core_confirmed}</div>
+          <div class="evidence-links" style="margin-top:8px;margin-bottom:16px;">
+            <a href="Challenges/Room - 3/evidence/tcp_reconstruction.html" target="_blank" style="font-family:var(--font-mono);font-size:10px;padding:6px 12px;border:1px dashed rgba(255,255,255,0.2);color:var(--cyan);text-decoration:none;border-radius:3px;transition:.2s;">EVIDENCE: TCP Reconstruction</a>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;margin-bottom:8px;">
+            <input type="text" id="flag-3" placeholder="NIGHTJAR{...}" style="flex:1;padding:10px;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.1);color:var(--amber);font-family:var(--font-mono);font-size:13px;border-radius:3px;outline:none;">
+            <button onclick="verifyFlag(3)" style="padding:10px 18px;background:var(--red);color:#fff;border:none;font-family:var(--font-mono);font-size:10px;font-weight:bold;border-radius:3px;cursor:pointer;transition:.2s;">VERIFY</button>
+          </div>
+          <div id="reward-3" class="challenge-flag" style="display:none;">✓ VERIFIED — TCP stream reconstructed.</div>
         </article>
 
         <article class="challenge" aria-label="Challenge 3.4">
@@ -528,7 +565,14 @@
             <h3>The Port That Should Have Been Closed</h3>
           </div>
           <p class="challenge-desc">The service scan shows one unexpected open port. Read its banner — the name of the service is the final key.</p>
-          <div class="challenge-flag">NIGHTJAR{port_4477_mira_7_propagation_service}</div>
+          <div class="evidence-links" style="margin-top:8px;margin-bottom:16px;">
+            <a href="Challenges/Room - 3/evidence/service_scan.html" target="_blank" style="font-family:var(--font-mono);font-size:10px;padding:6px 12px;border:1px dashed rgba(255,255,255,0.2);color:var(--cyan);text-decoration:none;border-radius:3px;transition:.2s;">EVIDENCE: Service Scan</a>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;margin-bottom:8px;">
+            <input type="text" id="flag-4" placeholder="NIGHTJAR{...}" style="flex:1;padding:10px;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.1);color:var(--amber);font-family:var(--font-mono);font-size:13px;border-radius:3px;outline:none;">
+            <button onclick="verifyFlag(4)" style="padding:10px 18px;background:var(--red);color:#fff;border:none;font-family:var(--font-mono);font-size:10px;font-weight:bold;border-radius:3px;cursor:pointer;transition:.2s;">VERIFY</button>
+          </div>
+          <div id="reward-4" class="challenge-flag" style="display:none;">✓ VERIFIED — Unexpected service identified.</div>
         </article>
       </div>
     </section>
@@ -546,5 +590,58 @@
       <span>10.7.7.43 · TCP/7331 · BEACON ACTIVE</span>
     </footer>
   </main>
+  <script>
+    const FLAGS = {
+      1: 'NIGHTJAR{10.7.7.43_to_203.0.113.77_port_8443}',
+      2: 'NIGHTJAR{maint_window_0200_user_kite_backup}',
+      3: 'NIGHTJAR{restore_aether_core_confirmed}',
+      4: 'NIGHTJAR{port_4477_mira_7_propagation_service}'
+    };
+
+    function verifyFlag(n) {
+      const inp = document.getElementById('flag-'+n);
+      const val = inp.value.trim();
+      const reward = document.getElementById('reward-'+n);
+      if (val === FLAGS[n] || val.toLowerCase() === FLAGS[n].toLowerCase()) {
+        reward.classList.add('show');
+        reward.innerHTML = '✓ VERIFIED — ' + reward.innerText.replace('✓ VERIFIED — ', '').trim();
+        localStorage.setItem('room3_target_' + n, 'solved');
+        inp.disabled = true;
+        checkAllSolved();
+      } else {
+        reward.style.display = 'block';
+        reward.style.color = 'var(--red)';
+        reward.innerText = '✗ INCORRECT — Try again.';
+        setTimeout(() => { reward.style.display = 'none'; }, 2500);
+      }
+    }
+
+    function checkAllSolved() {
+      let solved = 0;
+      for (let i = 1; i <= 4; i++) {
+        if (localStorage.getItem('room3_target_' + i) === 'solved') solved++;
+      }
+      if (solved === 4) {
+        const btn = document.createElement('a');
+        btn.href = '/hub';
+        btn.style.cssText = 'display:block;margin-top:40px;padding:16px;background:var(--cyan);color:#000;text-align:center;font-family:var(--font-mono);font-weight:bold;text-decoration:none;border-radius:4px;letter-spacing:2px;';
+        btn.textContent = 'PROCEED TO ROOM 4';
+        document.querySelector('.challenge').parentElement.insertAdjacentElement('afterend', btn);
+      }
+    }
+
+    function initSolvedState() {
+      for (let i = 1; i <= 4; i++) {
+        if (localStorage.getItem('room3_target_' + i) === 'solved') {
+          const inp = document.getElementById('flag-'+i);
+          const reward = document.getElementById('reward-'+i);
+          if (inp) { inp.value = FLAGS[i]; inp.disabled = true; }
+          if (reward) { reward.classList.add('show'); reward.innerHTML = '✓ VERIFIED — ' + reward.innerText.replace('✓ VERIFIED — ', '').trim(); }
+        }
+      }
+      checkAllSolved();
+    }
+    document.addEventListener('DOMContentLoaded', initSolvedState);
+  </script>
 </body>
 </html>
