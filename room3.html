@@ -649,7 +649,7 @@
                 localStorage.setItem('room3_target_' + targetNum, 'solved');
                 checkAllSolved();
             } else {
-                const btn = document.querySelector(`#target-${targetNum} button`);
+                const btn = document.querySelector('#target-' + targetNum + ' .input-group button');
                 const og = btn.innerText;
                 btn.innerText = 'ERROR';
                 btn.style.background = 'var(--red)';

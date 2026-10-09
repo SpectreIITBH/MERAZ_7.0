@@ -97,6 +97,7 @@ async def read_room(room_id: int, request: Request, user: models.User = Depends(
         1: "room1.html",
         2: "room2.html",
         3: "room3.html",
+        4: "room4.html",
     }
     filename = room_files.get(room_id)
     if filename and os.path.exists(filename):
@@ -374,6 +375,12 @@ async def submit_flag(room_id: int = Form(...), flag: str = Form(...), user: mod
             "NIGHTJAR{maint_window_0200_user_kite_backup}",
             "NIGHTJAR{restore_aether_core_confirmed}",
             "NIGHTJAR{port_4477_mira_7_propagation_service}"
+        ],
+        4: [
+            "NIGHTJAR{nexus_health_monitor_pid_2847_opt_mira}",
+            "NIGHTJAR{kite_backup_session_via_auth_token_0137}",
+            "NIGHTJAR{suid_aether_restart_owned_by_root_writable_by_nexus}",
+            "NIGHTJAR{ed25519_kite_backup_2019_added_oct_2026_aetherforge}"
         ]
     }
     
