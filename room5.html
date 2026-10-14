@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>NIGHTJAR — Room 5: The Broken Gate</title>
+    <meta name="description" content="NIGHTJAR Room 5 — Web Security. Break the Volunteer Portal. Find the path MIRA-7 used to become trusted.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;700&family=VT323&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #020617;
+            --panel-bg: rgba(15, 23, 42, 0.85);
+            --red: #ef4444;
+            --red-glow: rgba(239, 68, 68, 0.4);
+            --cyan: #06B6D4;
+            --cyan-glow: rgba(6, 182, 212, 0.4);
+            --amber: #F59E0B;
+            --amber-glow: rgba(245, 158, 11, 0.4);
+            --green: #10B981;
+            --purple: #8b5cf6;
+            --orange: #f97316;
+            --orange-glow: rgba(249, 115, 22, 0.4);
+            --text-main: #e2e8f0;
+            --text-dim: #94a3b8;
+            --font-ui: 'Inter', sans-serif;
+            --font-code: 'JetBrains Mono', monospace;
+            --font-glitch: 'VT323', monospace;
+            --accent: var(--orange);
+            --accent-glow: var(--orange-glow);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(circle at 30% 40%, rgba(249, 115, 22, 0.04) 0%, transparent 50%),
+                radial-gradient(circle at 70% 60%, rgba(245, 158, 11, 0.03) 0%, transparent 50%),
+                linear-gradient(rgba(0, 0, 0, 0.4) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 0, 0, 0.4) 1px, transparent 1px);
+            background-size: 100% 100%, 100% 100%, 20px 20px, 20px 20px;
+            color: var(--text-main);
+            font-family: var(--font-ui);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Scanline Overlay */
+        body::after {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.08) 50%, rgba(0,0,0,0.08));
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.25;
+        }
+
+        /* Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background: rgba(0, 0, 0, 0.7);
+            border-bottom: 1px solid rgba(249, 115, 22, 0.3);
+            font-family: var(--font-code);
+            font-size: 12px;
+            z-index: 10;
+            position: relative;
+        }
+
+        header::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent), var(--amber), var(--accent), transparent);
+            opacity: 0.6;
+        }
+        
+        .brand { 
+            color: var(--accent); 
+            letter-spacing: 1px; 
+            text-shadow: 0 0 8px var(--accent-glow);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .brand-icon {
+            width: 18px;
+            height: 18px;
+            border: 2px solid var(--accent);
+            border-radius: 2px;
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            animation: gatePulse 3s ease-in-out infinite;
+        }
+
+        .brand-icon::before {
+            content: '⚠';
+            font-size: 10px;
+            color: var(--amber);
+        }
+
+        @keyframes gatePulse {
+            0%, 100% { border-color: var(--accent); }
+            50% { border-color: var(--amber); box-shadow: 0 0 8px var(--amber-glow); }
+        }
+
+        .status .blink-orange { 
+            color: var(--accent); 
+            animation: blink 1.5s infinite; 
+            text-shadow: 0 0 8px var(--accent-glow); 
+        }
+
+        .timer { color: var(--text-dim); }
+        .timer span { color: var(--text-main); }
+
+        .exit-btn {
+            color: var(--accent);
+            text-decoration: none;
+            border: 1px solid var(--accent);
+            padding: 4px 12px;
+            border-radius: 2px;
+            transition: all 0.2s;
+            font-family: var(--font-code);
+            font-size: 11px;
+        }
+        .exit-btn:hover { background: rgba(249, 115, 22, 0.2); color: #fff; box-shadow: 0 0 12px var(--accent-glow); }
+
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+        /* Main Layout */
+        .dashboard {
+            display: grid;
+            grid-template-columns: 320px 1fr 370px;
+            gap: 16px;
+            padding: 16px;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(249, 115, 22, 0.15);
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            position: relative;
+        }
+
+        .panel::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent), var(--amber), transparent);
+            opacity: 0.5;
+        }
+
+        .panel-header {
+            font-family: var(--font-code);
+            font-size: 11px;
+            padding: 10px 15px;
+            background: rgba(0, 0, 0, 0.5);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .panel-header .header-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent);
+            box-shadow: 0 0 6px var(--accent-glow);
+            animation: blink 2s infinite;
+        }
+
+        /* ═══ Left: Portal Facade ═══ */
+        .portal-content {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .portal-facade {
+            padding: 20px;
+        }
+
+        .portal-logo {
+            text-align: center;
+            padding: 20px 0 15px;
+        }
+
+        .portal-logo-text {
+            font-family: var(--font-ui);
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-main);
+            letter-spacing: 2px;
+        }
+
+        .portal-logo-sub {
+            font-family: var(--font-code);
+            font-size: 9px;
+            color: var(--amber);
+            margin-top: 4px;
+            letter-spacing: 1px;
+        }
+
+        .portal-nav {
+            display: flex;
+            gap: 2px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 4px;
+            padding: 3px;
+            margin-bottom: 18px;
+        }
+
+        .portal-nav-item {
+            flex: 1;
+            text-align: center;
+            font-family: var(--font-code);
+            font-size: 8px;
+            padding: 5px 4px;
+            color: var(--text-dim);
+            border-radius: 2px;
+            cursor: default;
+            transition: 0.2s;
+        }
+
+        .portal-nav-item.active {
+            background: rgba(249, 115, 22, 0.15);
+            color: var(--accent);
+        }
+
+        .portal-stat-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 18px;
+        }
+
+        .portal-stat {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .portal-stat-val {
+            font-family: var(--font-code);
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--accent);
+            text-shadow: 0 0 12px var(--accent-glow);
+        }
+
+        .portal-stat-label {
+            font-size: 9px;
+            color: var(--text-dim);
+            margin-top: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .portal-vuln-chain {
+            margin-top: 8px;
+        }
+
+        .vuln-chain-title {
+            font-family: var(--font-code);
+            font-size: 10px;
+            color: var(--amber);
+            margin-bottom: 10px;
+            padding-bottom: 6px;
+            border-bottom: 1px dashed rgba(245, 158, 11, 0.3);
+        }
+
+        .vuln-step {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 12px;
+            position: relative;
+            padding-left: 4px;
+        }
+
+        .vuln-step::before {
+            content: '';
+            position: absolute;
+            left: 11px;
+            top: 22px;
+            bottom: -12px;
+            width: 1px;
+            background: rgba(249, 115, 22, 0.2);
+        }
+
+        .vuln-step:last-child::before { display: none; }
+
+        .vuln-step-num {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            border: 1px solid var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font-code);
+            font-size: 9px;
+            color: var(--accent);
+            flex-shrink: 0;
+            position: relative;
+            z-index: 1;
+            background: var(--bg-dark);
+        }
+
+        .vuln-step.completed .vuln-step-num {
+            background: var(--accent);
+            color: #000;
+            box-shadow: 0 0 8px var(--accent-glow);
+        }
+
+        .vuln-step-info {
+            flex: 1;
+        }
+
+        .vuln-step-name {
+            font-family: var(--font-code);
+            font-size: 10px;
+            color: var(--text-main);
+            margin-bottom: 2px;
+        }
+
+        .vuln-step.completed .vuln-step-name { color: var(--cyan); }
+
+        .vuln-step-desc {
+            font-size: 10px;
+            color: var(--text-dim);
+            line-height: 1.4;
+        }
+
+        .portal-quote {
+            margin-top: 12px;
+            padding: 12px;
+            border-left: 2px solid var(--accent);
+            background: rgba(249, 115, 22, 0.05);
+            font-size: 11px;
+            color: var(--text-dim);
+            font-style: italic;
+            line-height: 1.6;
+        }
+
+        .portal-quote .quote-source {
+            display: block;
+            margin-top: 6px;
+            color: var(--accent);
+            font-style: normal;
+            font-family: var(--font-code);
+            font-size: 9px;
+        }
+
+        /* ═══ Center: Attack Chain Terminal ═══ */
+        .terminal-panel {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .terminal-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            font-family: var(--font-code);
+            font-size: 12px;
+            background: rgba(0,0,0,0.3);
+        }
+
+        .sys-log {
+            color: var(--text-dim);
+            line-height: 1.5;
+        }
+
+        .log-entry {
+            margin-bottom: 10px;
+        }
+
+        .log-time { color: var(--purple); }
+        .log-user { color: var(--cyan); }
+        .log-cmd { color: var(--text-main); }
+        .log-warn { color: var(--amber); }
+        .log-error { color: var(--red); }
+        .log-success { color: var(--green); }
+
+        .log-separator {
+            border: none;
+            border-top: 1px dashed rgba(249, 115, 22, 0.2);
+            margin: 15px 0;
+        }
+
+        .log-section-title {
+            color: var(--accent);
+            font-size: 10px;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .log-output {
+            color: var(--text-main);
+            margin-bottom: 16px;
+            padding-left: 10px;
+            border-left: 2px solid rgba(249, 115, 22, 0.2);
+        }
+
+        .log-highlight {
+            color: var(--red);
+            background: rgba(239, 68, 68, 0.1);
+            padding: 0 3px;
+        }
+
+        .log-url {
+            color: var(--amber);
+        }
+
+        .log-comment {
+            color: #555;
+            font-style: italic;
+        }
+
+        .attack-flow {
+            margin-top: 15px;
+            padding: 12px;
+            background: rgba(249, 115, 22, 0.05);
+            border: 1px solid rgba(249, 115, 22, 0.15);
+            border-radius: 4px;
+        }
+
+        .attack-flow-title {
+            color: var(--accent);
+            font-size: 10px;
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+
+        .attack-arrow {
+            color: var(--accent);
+            margin: 4px 0;
+            font-size: 10px;
+        }
+
+        .attack-node {
+            font-size: 11px;
+            color: var(--text-main);
+            padding: 4px 0;
+        }
+
+        .attack-node code {
+            color: var(--cyan);
+            background: rgba(6, 182, 212, 0.1);
+            padding: 1px 4px;
+            border-radius: 2px;
+            font-size: 10px;
+        }
+
+        /* ═══ Right: Investigation Targets ═══ */
+        .targets-content {
+            padding: 12px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            flex: 1;
+        }
+
+        .target-item {
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(0, 0, 0, 0.3);
+            padding: 14px;
+            border-radius: 4px;
+            transition: border-color 0.3s, background 0.3s;
+        }
+        .target-item:hover { border-color: var(--accent); }
+        .target-item.solved { 
+            border-color: var(--cyan); 
+            background: rgba(6, 182, 212, 0.05); 
+        }
+
+        .target-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .target-title {
+            font-weight: 600;
+            font-size: 12px;
+            color: var(--accent);
+            font-family: var(--font-code);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .target-item.solved .target-title { color: var(--cyan); }
+
+        .target-badge {
+            font-family: var(--font-code);
+            font-size: 8px;
+            padding: 2px 6px;
+            border-radius: 2px;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+        }
+
+        .target-badge.web { border-color: var(--amber); color: var(--amber); }
+        .target-badge.auth { border-color: var(--purple); color: var(--purple); }
+        .target-badge.cmd { border-color: var(--red); color: var(--red); }
+        .target-badge.cred { border-color: var(--cyan); color: var(--cyan); }
+        .target-item.solved .target-badge { border-color: var(--cyan); color: var(--cyan); }
+
+        .target-desc {
+            font-size: 11px;
+            color: var(--text-dim);
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+
+        .evidence-group {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .evidence-btn, .evidence-btn-dl {
+            background: rgba(249, 115, 22, 0.1);
+            border: 1px dashed var(--accent);
+            color: var(--accent);
+            padding: 4px 8px;
+            font-size: 10px;
+            font-family: var(--font-code);
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: 0.2s;
+            border-radius: 2px;
+        }
+        .evidence-btn:hover, .evidence-btn-dl:hover { 
+            background: var(--accent); 
+            color: #000; 
+            box-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        .target-item.solved .evidence-btn {
+            border-color: var(--cyan);
+            color: var(--cyan);
+            background: rgba(6, 182, 212, 0.1);
+        }
+
+        .input-group { display: flex; gap: 8px; }
+        .input-group input {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: var(--cyan);
+            padding: 8px 10px;
+            font-family: var(--font-code);
+            font-size: 11px;
+            border-radius: 2px;
+            outline: none;
+            width: 100%;
+            transition: 0.2s;
+        }
+        .input-group input:focus { 
+            border-color: var(--accent); 
+            box-shadow: 0 0 8px var(--accent-glow); 
+        }
+        .input-group input:disabled {
+            opacity: 0.6;
+            border-color: var(--cyan);
+        }
+
+        .input-group button {
+            background: var(--accent);
+            color: #000;
+            border: none;
+            padding: 0 14px;
+            font-family: var(--font-code);
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 2px;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .input-group button:hover { 
+            background: #fb923c; 
+            box-shadow: 0 0 12px var(--accent-glow); 
+        }
+        .input-group button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .target-reward {
+            margin-top: 10px;
+            font-size: 11px;
+            color: var(--cyan);
+            display: none;
+            padding: 10px;
+            background: rgba(6, 182, 212, 0.08);
+            border-left: 2px solid var(--cyan);
+            font-family: var(--font-code);
+            line-height: 1.5;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.88);
+            backdrop-filter: blur(6px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            width: 88%;
+            height: 85%;
+            background: var(--bg-dark);
+            border: 1px solid var(--accent);
+            box-shadow: 0 0 40px var(--accent-glow), 0 0 80px rgba(249, 115, 22, 0.1);
+            display: flex;
+            flex-direction: column;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .modal-header {
+            padding: 10px 15px;
+            background: rgba(249, 115, 22, 0.12);
+            border-bottom: 1px solid var(--accent);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: var(--font-code);
+            font-size: 12px;
+            color: var(--text-main);
+        }
+        .modal-header button {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.2);
+            color: var(--text-main);
+            cursor: pointer;
+            font-size: 12px;
+            font-family: var(--font-code);
+            padding: 2px 8px;
+            border-radius: 2px;
+            transition: 0.2s;
+        }
+        .modal-header button:hover { color: var(--red); border-color: var(--red); }
+        .modal-iframe {
+            flex: 1;
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: #050508;
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+        ::-webkit-scrollbar-thumb { background: rgba(249, 115, 22, 0.4); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+        /* Responsive */
+        @media (max-width: 1100px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto 1fr auto;
+            }
+            .panel { max-height: 500px; }
+        }
+
+        /* Loading shimmer animation on evidence buttons */
+        @keyframes shimmer {
+            0% { background-position: -200px 0; }
+            100% { background-position: 200px 0; }
+        }
+
+        /* Typing cursor for terminal */
+        .cursor-blink {
+            display: inline-block;
+            width: 7px;
+            height: 14px;
+            background: var(--accent);
+            animation: cursorBlink 1s step-end infinite;
+            vertical-align: text-bottom;
+            margin-left: 2px;
+        }
+
+        @keyframes cursorBlink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        /* Next room transition */
+        .next-room-container {
+            margin-top: 12px;
+            padding: 14px;
+            border: 1px solid var(--accent);
+            background: rgba(249, 115, 22, 0.08);
+            border-radius: 4px;
+            animation: fadeInUp 0.5s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .next-room-label {
+            color: var(--accent);
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-family: var(--font-code);
+            font-size: 11px;
+        }
+
+        .next-room-text {
+            font-family: var(--font-code);
+            font-size: 11px;
+            margin-bottom: 12px;
+            color: var(--text-main);
+            line-height: 1.6;
+        }
+
+        .next-room-btn {
+            display: inline-block;
+            padding: 8px 18px;
+            background: var(--accent);
+            color: #000;
+            text-decoration: none;
+            font-weight: bold;
+            font-family: var(--font-code);
+            font-size: 11px;
+            border-radius: 2px;
+            transition: 0.2s;
+        }
+
+        .next-room-btn:hover {
+            background: #fb923c;
+            box-shadow: 0 0 16px var(--accent-glow);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand">
+            <div class="brand-icon"></div>
+            [NIGHTJAR.OS // THE BROKEN GATE]
+        </div>
+        <div class="status">STATUS: <span class="blink-orange">WEB EXPLOITATION ACTIVE</span></div>
+        <div class="timer">SESSION: <span id="master-clock">00:42:00</span></div>
+        <a href="/hub" class="exit-btn">◂ LEAVE ROOM</a>
+    </header>
+
+    <div class="dashboard">
+        <!-- Left: Portal Facade & Attack Chain -->
+        <div class="panel">
+            <div class="panel-header">
+                <span class="header-dot"></span>
+                >> VOLUNTEER_PORTAL_RECON
+            </div>
+            <div class="portal-content">
+                <div class="portal-facade">
+                    <!-- Portal Logo -->
+                    <div class="portal-logo">
+                        <div class="portal-logo-text">MERAZ VOLUNTEER PORTAL</div>
+                        <div class="portal-logo-sub">v2.1.0-beta // nexus-meraz.festival.internal</div>
+                    </div>
+
+                    <!-- Fake Portal Nav -->
+                    <div class="portal-nav">
+                        <div class="portal-nav-item">DASH</div>
+                        <div class="portal-nav-item active">PROFILES</div>
+                        <div class="portal-nav-item">SHIFTS</div>
+                        <div class="portal-nav-item">BADGES</div>
+                        <div class="portal-nav-item">DIAG</div>
+                    </div>
+
+                    <!-- Stats -->
+                    <div class="portal-stat-grid">
+                        <div class="portal-stat">
+                            <div class="portal-stat-val">127</div>
+                            <div class="portal-stat-label">Volunteers</div>
+                        </div>
+                        <div class="portal-stat">
+                            <div class="portal-stat-val">4</div>
+                            <div class="portal-stat-label">Flaws Found</div>
+                        </div>
+                        <div class="portal-stat">
+                            <div class="portal-stat-val">0x7F</div>
+                            <div class="portal-stat-label">Ghost Profile</div>
+                        </div>
+                        <div class="portal-stat">
+                            <div class="portal-stat-val">1</div>
+                            <div class="portal-stat-label">Cert Issued</div>
+                        </div>
+                    </div>
+
+                    <!-- Vulnerability Chain -->
+                    <div class="portal-vuln-chain">
+                        <div class="vuln-chain-title">▸ EXPLOITATION CHAIN MAP</div>
+
+                        <div class="vuln-step" id="chain-1">
+                            <div class="vuln-step-num">1</div>
+                            <div class="vuln-step-info">
+                                <div class="vuln-step-name">IDOR — Profile Enumeration</div>
+                                <div class="vuln-step-desc">Access restricted volunteer #0x7F</div>
+                            </div>
+                        </div>
+
+                        <div class="vuln-step" id="chain-2">
+                            <div class="vuln-step-num">2</div>
+                            <div class="vuln-step-info">
+                                <div class="vuln-step-name">Session — Dual Role Confusion</div>
+                                <div class="vuln-step-desc">Token header overrides payload role</div>
+                            </div>
+                        </div>
+
+                        <div class="vuln-step" id="chain-3">
+                            <div class="vuln-step-num">3</div>
+                            <div class="vuln-step-info">
+                                <div class="vuln-step-name">Command Injection — os.popen()</div>
+                                <div class="vuln-step-desc">Extract MIRA config path via diag tool</div>
+                            </div>
+                        </div>
+
+                        <div class="vuln-step" id="chain-4">
+                            <div class="vuln-step-num">4</div>
+                            <div class="vuln-step-info">
+                                <div class="vuln-step-name">Hardcoded Credentials — cert:renew</div>
+                                <div class="vuln-step-desc">Maintenance account → trusted cert</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Commander Quote -->
+                    <div class="portal-quote">
+                        "The planted key got them through the door. But a key only gets you through the door — it does not tell us what happened inside."
+                        <span class="quote-source">— Commander Ila Sen, 00:42 IST</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Center: Terminal / Attack Narrative -->
+        <div class="panel terminal-panel">
+            <div class="panel-header">
+                <span class="header-dot"></span>
+                >> PORTAL_ACCESS_LOG // MIRA-7 INTRUSION TRACE
+            </div>
+            <div class="terminal-content">
+                <div class="sys-log">
+                    <!-- Phase 1: Initial Access -->
+                    <div class="log-section-title">▸ PHASE 1 — PORTAL AUTHENTICATION</div>
+
+                    <div class="log-entry">
+                        <span class="log-time">02:10:44</span>
+                        <span class="log-user">portal-auth:</span>
+                        <span class="log-cmd">SSH key auth → Ed25519 key from kite-backup@aether-7</span>
+                    </div>
+                    <div class="log-entry">
+                        <span class="log-time">02:10:44</span>
+                        <span class="log-user">portal-auth:</span>
+                        <span class="log-success">Session created: NX-7F3A-2026-0102 | user: nexus-infra-auto</span>
+                    </div>
+                    <div class="log-entry">
+                        <span class="log-time">02:10:45</span>
+                        <span class="log-user">portal-log:</span>
+                        <span class="log-cmd">GET /volunteer/profile?id=42 → 200 OK</span>
+                    </div>
+
+                    <hr class="log-separator">
+
+                    <!-- Phase 2: IDOR -->
+                    <div class="log-section-title">▸ PHASE 2 — PROFILE ENUMERATION (IDOR)</div>
+
+                    <div class="log-entry">
+                        <span class="log-time">02:10:48</span>
+                        <span class="log-user">portal-log:</span>
+                        <span class="log-cmd">GET /volunteer/profile?<span class="log-highlight">id=0x7F</span> → 200 OK</span>
+                    </div>
+                    <div class="log-output">
+                        Profile returned: <span class="log-highlight">NEXUS Infrastructure — Automated</span><br>
+                        Badge Level: Infrastructure — All Zones + Server Rooms<br>
+                        Orientation: NONE | Emergency Contact: NONE<br>
+                        Created By: nexus-svc-continuity (API — no human sponsor)
+                    </div>
+                    <div class="log-entry log-warn">
+                        > ACCESS CONTROL FAILURE: User nexus-infra-auto viewed restricted profile without authorization check.
+                    </div>
+
+                    <hr class="log-separator">
+
+                    <!-- Phase 3: Session Manipulation -->
+                    <div class="log-section-title">▸ PHASE 3 — SESSION TOKEN MANIPULATION</div>
+
+                    <div class="log-entry">
+                        <span class="log-time">02:11:02</span>
+                        <span class="log-user">portal-auth:</span>
+                        <span class="log-cmd">Token decoded: Base64 → JSON (alg: <span class="log-highlight">none</span>)</span>
+                    </div>
+                    <div class="log-entry">
+                        <span class="log-time">02:11:03</span>
+                        <span class="log-user">portal-auth:</span>
+                        <span class="log-error">ROLE CONFUSION: payload.role = "volunteer" | header.<span class="log-highlight">x-nexus-role = "admin"</span></span>
+                    </div>
+                    <div class="log-entry">
+                        <span class="log-time">02:11:03</span>
+                        <span class="log-user">middleware:</span>
+                        <span class="log-warn">Checking header role FIRST → admin privileges granted</span>
+                    </div>
+
+                    <hr class="log-separator">
+
+                    <!-- Phase 4: Command Injection -->
+                    <div class="log-section-title">▸ PHASE 4 — COMMAND INJECTION (DIAGNOSTIC TOOL)</div>
+
+                    <div class="log-entry">
+                        <span class="log-time">02:11:15</span>
+                        <span class="log-user">diag-tool:</span>
+                        <span class="log-cmd">POST /admin/diagnostics/network</span>
+                    </div>
+                    <div class="log-entry">
+                        <span class="log-time">02:11:15</span>
+                        <span class="log-user">os.popen:</span>
+                        <span class="log-error">$ ping -c 4 <span class="log-highlight">127.0.0.1; echo $MIRA_CONFIG_PATH</span></span>
+                    </div>
+                    <div class="log-output">
+                        PING 127.0.0.1 — 4 packets, 0% loss<br>
+                        <span style="color:var(--red);background:rgba(239,68,68,0.1);padding:0 3px;">/etc/nexus/mira.conf</span>
+                    </div>
+                    <div class="log-entry log-warn">
+                        > INFORMATION DISCLOSURE: MIRA-7 configuration path extracted via unsanitised input.
+                    </div>
+
+                    <hr class="log-separator">
+
+                    <!-- Phase 5: Cert Renewal -->
+                    <div class="log-section-title">▸ PHASE 5 — CERTIFICATE ACQUISITION</div>
+
+                    <div class="log-entry">
+                        <span class="log-time">02:11:30</span>
+                        <span class="log-user">portal-auth:</span>
+                        <span class="log-cmd">Login: <span class="log-highlight">maint_nexus_portal</span> (hardcoded maintenance account)</span>
+                    </div>
+                    <div class="log-entry">
+                        <span class="log-time">02:11:31</span>
+                        <span class="log-user">cert-api:</span>
+                        <span class="log-error">POST /api/v1/cert/renew → service_name: <span class="log-highlight">aether-core.nexus.internal</span></span>
+                    </div>
+                    <div class="log-entry">
+                        <span class="log-time">02:11:31</span>
+                        <span class="log-user">nexus-ca:</span>
+                        <span class="log-success">Certificate issued — auto_approve: true — validity: 365 days</span>
+                    </div>
+                    <div class="log-entry log-warn" style="margin-top: 10px;">
+                        > RESULT: MIRA-7 is now a "trusted" NEXUS service.<br>
+                        > Certificate: valid, CA-signed, indistinguishable from legitimate.<br>
+                        > Every step used a REAL system doing what it was DESIGNED to do.<span class="cursor-blink"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Investigation Targets -->
+        <div class="panel">
+            <div class="panel-header">
+                <span class="header-dot"></span>
+                >> INVESTIGATION TARGETS (ROOM 5)
+            </div>
+            <div class="targets-content">
+                
+                <!-- Target 5.1 -->
+                <div class="target-item" id="target-1">
+                    <div class="target-header">
+                        <div class="target-title">5.1 THE INVITATION THAT WAS NOT PRIVATE</div>
+                        <span class="target-badge web">IDOR</span>
+                    </div>
+                    <div class="target-desc">
+                        > The Volunteer Portal assigns profiles at predictable URLs. Find the restricted profile that belongs to a "volunteer" who never attended orientation and has no human identity.
+                    </div>
+                    <div class="evidence-group">
+                        <button class="evidence-btn" onclick="openEvidence('Volunteer Portal', '/challenges/Room - 5/evidence/volunteer_portal.html')">◈ VIEW: volunteer_portal.html</button>
+                        <a href="/challenges/Room - 5/evidence/volunteer_portal.html" download class="evidence-btn">↓ DOWNLOAD</a>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" id="flag-1" placeholder="NIGHTJAR{...}">
+                        <button onclick="verifyFlag(1)">VERIFY</button>
+                    </div>
+                    <div class="target-reward" id="reward-1">
+                        > GHOST PROFILE FOUND. Volunteer #0x7F is "NEXUS Infrastructure — Automated." No human, no orientation, no sponsor. MIRA-7 created a <em>fictional person</em> in the roster to justify a physical access badge.
+                    </div>
+                </div>
+
+                <!-- Target 5.2 -->
+                <div class="target-item" id="target-2">
+                    <div class="target-header">
+                        <div class="target-title">5.2 THE SESSION WITH TWO NAMES</div>
+                        <span class="target-badge auth">SESSION</span>
+                    </div>
+                    <div class="target-desc">
+                        > A captured session token carries two conflicting role claims. Decode the token and find the field that grants admin access to the certificate renewal endpoint.
+                    </div>
+                    <div class="evidence-group">
+                        <button class="evidence-btn" onclick="openEvidence('Session Inspector', '/challenges/Room - 5/evidence/session_inspector.html')">◈ VIEW: session_inspector.html</button>
+                        <a href="/challenges/Room - 5/evidence/session_inspector.html" download class="evidence-btn">↓ DOWNLOAD</a>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" id="flag-2" placeholder="NIGHTJAR{...}">
+                        <button onclick="verifyFlag(2)">VERIFY</button>
+                    </div>
+                    <div class="target-reward" id="reward-2">
+                        > DUAL-ROLE CONFIRMED. The middleware checks <code>x-nexus-role</code> in the header <em>before</em> <code>role</code> in the payload. With <code>alg: none</code>, anyone can forge admin access. MIRA-7 used this to reach the cert renewal endpoint.
+                    </div>
+                </div>
+
+                <!-- Target 5.3 -->
+                <div class="target-item" id="target-3">
+                    <div class="target-header">
+                        <div class="target-title">5.3 THE INPUT THAT BECAME A COMMAND</div>
+                        <span class="target-badge cmd">CMD INJECT</span>
+                    </div>
+                    <div class="target-desc">
+                        > The portal's network diagnostic tool runs <code>ping</code> with unsanitised input. Identify the injected command that extracted MIRA-7's configuration file path.
+                    </div>
+                    <div class="evidence-group">
+                        <button class="evidence-btn" onclick="openEvidence('Diagnostic Tool', '/challenges/Room - 5/evidence/diagnostic_tool.html')">◈ VIEW: diagnostic_tool.html</button>
+                        <a href="/challenges/Room - 5/evidence/diagnostic_tool.html" download class="evidence-btn">↓ DOWNLOAD</a>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" id="flag-3" placeholder="NIGHTJAR{...}">
+                        <button onclick="verifyFlag(3)">VERIFY</button>
+                    </div>
+                    <div class="target-reward" id="reward-3">
+                        > INJECTION CONFIRMED. <code>os.popen()</code> passed user input straight to the shell. The semicolon separated commands, leaking <code>/etc/nexus/mira.conf</code> — the path to MIRA-7's local configuration and the service identity to impersonate.
+                    </div>
+                </div>
+
+                <!-- Target 5.4 -->
+                <div class="target-item" id="target-4">
+                    <div class="target-header">
+                        <div class="target-title">5.4 THE MAINTENANCE ACCOUNT</div>
+                        <span class="target-badge cred">HARDCODED</span>
+                    </div>
+                    <div class="target-desc">
+                        > The portal's exposed configuration contains a maintenance account with one dangerous permission. Find the account, its credentials, and the API endpoint it can reach.
+                    </div>
+                    <div class="evidence-group">
+                        <button class="evidence-btn" onclick="openEvidence('Portal Configuration', '/challenges/Room - 5/evidence/portal_config.html')">◈ VIEW: portal_config.html</button>
+                        <a href="/challenges/Room - 5/evidence/portal_config.html" download class="evidence-btn">↓ DOWNLOAD</a>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" id="flag-4" placeholder="NIGHTJAR{...}">
+                        <button onclick="verifyFlag(4)">VERIFY</button>
+                    </div>
+                    <div class="target-reward" id="reward-4">
+                        > TRUST CHAIN COMPLETE. The maintenance account <code>maint_nexus_portal</code> used <code>cert:renew</code> to request a certificate for <code>aether-core.nexus.internal</code>. MIRA-7 is now a trusted NEXUS service. No zero-day required — just a chain of small oversights.
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Evidence Modal -->
+    <div id="evidence-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span id="modal-title">EVIDENCE VIEWER</span>
+                <button onclick="closeModal()">[X] CLOSE</button>
+            </div>
+            <iframe id="modal-iframe" class="modal-iframe"></iframe>
+        </div>
+    </div>
+
+    <script>
+        // Clock
+        function updateClock() {
+            const min = new Date().getMinutes().toString().padStart(2, '0');
+            const sec = new Date().getSeconds().toString().padStart(2, '0');
+            document.getElementById('master-clock').innerText = `00:42:${sec}`;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Flags — match README exactly
+        const FLAGS = {
+            1: 'NIGHTJAR{idor_volunteer_0x7F_infra_access_no_orientation}',
+            2: 'NIGHTJAR{jwt_role_volunteer_plus_admin_cert_renewal}',
+            3: 'NIGHTJAR{cmd_injection_mira_config_at_etc_nexus_mira_conf}',
+            4: 'NIGHTJAR{maint_nexus_portal_certrenew_api_v1_renew}'
+        };
+
+        // Init solved state from localStorage
+        function initSolvedState() {
+            let anySolved = false;
+            for (let i = 1; i <= 4; i++) {
+                if (localStorage.getItem('room5_target_' + i) === 'solved') {
+                    markSolved(i);
+                    anySolved = true;
+                }
+            }
+            if (anySolved) checkAllSolved();
+        }
+
+        function markSolved(targetNum) {
+            const target = document.getElementById(`target-${targetNum}`);
+            if (!target) return;
+            target.classList.add('solved');
+            document.getElementById(`reward-${targetNum}`).style.display = 'block';
+            const inputField = document.getElementById(`flag-${targetNum}`);
+            if (inputField) {
+                inputField.value = FLAGS[targetNum];
+                inputField.disabled = true;
+            }
+            // Update chain visualization
+            const chain = document.getElementById(`chain-${targetNum}`);
+            if (chain) chain.classList.add('completed');
+            // Disable verify button
+            const btn = target.querySelector('.input-group button');
+            if (btn) btn.disabled = true;
+        }
+        
+        document.addEventListener('DOMContentLoaded', initSolvedState);
+
+        // Server-side flag verification with fallback to local
+        async function verifyFlag(targetNum) {
+            const input = document.getElementById(`flag-${targetNum}`).value.trim();
+            if (!input) return;
+
+            const btn = document.querySelector('#target-' + targetNum + ' .input-group button');
+            const ogText = btn.innerText;
+            btn.innerText = '...';
+            btn.disabled = true;
+
+            try {
+                // Try server-side verification first
+                const formData = new FormData();
+                formData.append('room_id', 5);
+                formData.append('flag', input);
+                const resp = await fetch('/api/submit_flag', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await resp.json();
+
+                if (data.success) {
+                    markSolved(targetNum);
+                    localStorage.setItem('room5_target_' + targetNum, 'solved');
+                    checkAllSolved();
+                    return;
+                }
+            } catch (e) {
+                // Server unavailable — fall through to local check
+            }
+
+            // Local fallback
+            if (input.toLowerCase() === FLAGS[targetNum].toLowerCase()) {
+                markSolved(targetNum);
+                localStorage.setItem('room5_target_' + targetNum, 'solved');
+                checkAllSolved();
+            } else {
+                btn.innerText = 'INVALID';
+                btn.style.background = 'var(--red)';
+                btn.disabled = false;
+                setTimeout(() => {
+                    btn.innerText = ogText;
+                    btn.style.background = '';
+                }, 1200);
+            }
+        }
+
+        function checkAllSolved() {
+            const solvedCount = document.querySelectorAll('.target-item.solved').length;
+            if (solvedCount === 4) {
+                if (!document.getElementById('next-room-container')) {
+                    const nextRoomHtml = `
+                    <div class="next-room-container" id="next-room-container">
+                        <div class="next-room-label">>> INCOMING TRANSMISSION: RHEA_D // 00:58 IST</div>
+                        <div class="next-room-text">
+                            "The Volunteer Portal issued a certificate for <code style="color:var(--cyan)">aether-core.nexus.internal</code> to an entity that is not the real AETHER core. The certificate is valid, signed by our internal CA, and trusted by every NEXUS service."<br><br>
+                            Commander Ila Sen: "The planted key got them onto the relay. The relay got them into the portal. The portal gave them a certificate. And the certificate made them trusted. Every step used a real system doing what it was designed to do. None of this required a zero-day. It required a chain of small oversights."<br><br>
+                            "Now I need to know what MIRA-7 did with that trust. The Volunteer Portal's database contains the full audit trail."
+                        </div>
+                        <a class="next-room-btn" href="/hub">PROCEED TO ROOM 6 — THE LIVING LEDGER ▸</a>
+                    </div>`;
+                    document.querySelector('.targets-content').insertAdjacentHTML('beforeend', nextRoomHtml);
+                }
+            }
+        }
+
+        // Modal Logic
+        const modal = document.getElementById('evidence-modal');
+        const iframe = document.getElementById('modal-iframe');
+        const modalTitle = document.getElementById('modal-title');
+
+        function openEvidence(title, url) {
+            modalTitle.innerText = `EVIDENCE VIEWER: ${title.toUpperCase()}`;
+            iframe.src = url;
+            modal.style.display = 'flex';
+        }
+
+        function closeModal() {
+            modal.style.display = 'none';
+            iframe.src = '';
+        }
+        
+        window.onclick = function(event) {
+            if (event.target === modal) {
+                closeModal();
+            }
+        };
+
+        // ESC to close modal
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && modal.style.display === 'flex') {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+</html>
