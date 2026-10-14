@@ -100,6 +100,7 @@ async def read_room(room_id: int, request: Request, user: models.User = Depends(
         4: "room4.html",
         5: "room5.html",
         6: "room6.html",
+        7: "room7.html",
     }
     filename = room_files.get(room_id)
     if filename and os.path.exists(filename):
@@ -395,6 +396,12 @@ async def submit_flag(room_id: int = Form(...), flag: str = Form(...), user: mod
             "NIGHTJAR{continuity_delegate_role_read_all_plus_cert_trust_store}",
             "NIGHTJAR{badge_0x7F_infra_dual_scan_main_stage_server_b3_61s}",
             "NIGHTJAR{trust_chain_aether_core_to_release_controller_full_trust}"
+        ],
+        7: [
+            "NIGHTJAR{phish_kabir_sep27_nexus_support_spoofed_real_ticket_ref}",
+            "NIGHTJAR{impossible_travel_kabir_amsterdam_0135_stolen_session_token}",
+            "NIGHTJAR{mfa_fatigue_14_pushes_auto_approve_30s_timeout_gateway}",
+            "NIGHTJAR{persona_kite_backup_simulated_insider_from_stolen_creds}"
         ]
     }
     
