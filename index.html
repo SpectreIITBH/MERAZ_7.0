@@ -390,6 +390,11 @@ ROOMS.forEach((r,i)=>{
             <div class="room-name">${r[0]}</div>
             <div class="room-domain">${r[1]}</div>
         </div>`;
+    el.addEventListener('click', () => {
+        if (i >= 0 && i <= 6) {
+            window.location.href = '/room/' + (i + 1);
+        }
+    });
     roomListEl.appendChild(el);
 });
 
@@ -534,7 +539,7 @@ function near(){let b=null,bd=34;for(const d of D){const e=Math.hypot(p.x-d.x,p.
 NP.forEach((n,i)=>{const e=Math.hypot(p.x-n.x,p.y-n.y);if(e<bd){bd=e;b={t:'npc',i}}});return b}
 function interact(){mode=='room'?leave():act()}
 function act(){const n=near();if(!n)return;if(n.t=='npc')return talk(n.i);
-if(n.i === 0 || n.i === 1) { window.location.href = '/room/' + (n.i + 1); return; }
+if(n.i >= 0 && n.i <= 6) { window.location.href = '/room/' + (n.i + 1); return; }
 visited[n.i]=1;ri=n.i;$('rn').textContent='ROOM '+(n.i+1);mode='room';ST.dataset.m='room';$('dlg').hidden=true;npcOpen=false;K.l=K.r=K.u=K.d=0;
 highlightCurrentRoom(n.i);
 addIntel('SYSTEM','Entered Room '+(n.i+1)+': '+R[n.i][0]+' ['+R[n.i][1]+']');
@@ -545,12 +550,12 @@ $('room-content').innerHTML = '<div style="color:var(--cyan);text-align:center;p
 $('flag-input').value = '';
 $('flag-result').textContent = '';
 
-fetch('/challenges/Room - '+(n.i+1)+'/README.md')
+fetch('/room'+(n.i+1)+'.html')
     .then(r => r.ok ? r.text() : Promise.reject('Room data not found on server.'))
     .then(text => {
-        // Fix relative evidence links
+        // Fix relative evidence links in the loaded HTML
         text = text.replace(/evidence\//g, '/challenges/Room - '+(n.i+1)+'/evidence/');
-        $('room-content').innerHTML = marked.parse(text);
+        $('room-content').innerHTML = text;
     })
     .catch(err => {
         $('room-content').innerHTML = '<div style="color:var(--red);text-align:center;padding:40px;font-family:\'Press Start 2P\'">ERROR: ' + err + '</div>';

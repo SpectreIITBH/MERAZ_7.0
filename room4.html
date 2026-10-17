@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>NIGHTJAR — Room 4: The Quiet Machine</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;700&family=VT323&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #020617;
+            --panel-bg: rgba(15, 23, 42, 0.85);
+            --red: #ef4444;
+            --red-glow: rgba(239, 68, 68, 0.4);
+            --cyan: #06B6D4;
+            --cyan-glow: rgba(6, 182, 212, 0.4);
+            --amber: #F59E0B;
+            --green: #10B981;
+            --purple: #8b5cf6;
+            --text-main: #e2e8f0;
+            --text-dim: #94a3b8;
+            --font-ui: 'Inter', sans-serif;
+            --font-code: 'JetBrains Mono', monospace;
+            --font-glitch: 'VT323', monospace;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.05) 0%, transparent 60%),
+                linear-gradient(rgba(0, 0, 0, 0.4) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 0, 0, 0.4) 1px, transparent 1px);
+            background-size: 100% 100%, 20px 20px, 20px 20px;
+            color: var(--text-main);
+            font-family: var(--font-ui);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Scanline Overlay */
+        body::after {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1));
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.3;
+        }
+
+        /* Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background: rgba(0, 0, 0, 0.6);
+            border-bottom: 1px solid rgba(16, 185, 129, 0.3);
+            font-family: var(--font-code);
+            font-size: 12px;
+            z-index: 10;
+        }
+        
+        .brand { color: var(--green); letter-spacing: 1px; text-shadow: 0 0 8px rgba(16,185,129,0.4); }
+        .status .blink-green { color: var(--green); animation: blink 1.5s infinite; text-shadow: 0 0 8px rgba(16,185,129,0.4); }
+        .timer { color: var(--text-dim); }
+        .timer span { color: var(--text-main); }
+        .exit-btn {
+            color: var(--green);
+            text-decoration: none;
+            border: 1px solid var(--green);
+            padding: 4px 12px;
+            border-radius: 2px;
+            transition: all 0.2s;
+        }
+        .exit-btn:hover { background: rgba(16, 185, 129, 0.2); color: #fff; }
+
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+        /* Main Layout */
+        .dashboard {
+            display: grid;
+            grid-template-columns: 300px 1fr 350px;
+            gap: 20px;
+            padding: 20px;
+            flex: 1;
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            position: relative;
+        }
+
+        .panel::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--green), transparent);
+            opacity: 0.5;
+        }
+
+        .panel-header {
+            font-family: var(--font-code);
+            font-size: 11px;
+            padding: 10px 15px;
+            background: rgba(0, 0, 0, 0.5);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            color: var(--green);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Server Specs Panel */
+        .server-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            font-family: var(--font-code);
+            font-size: 11px;
+        }
+
+        .server-ascii {
+            color: var(--text-dim);
+            font-size: 8px;
+            line-height: 1.2;
+            margin-bottom: 20px;
+            text-align: center;
+            white-space: pre;
+        }
+
+        .sys-info {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            color: var(--cyan);
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px dashed rgba(16,185,129,0.2);
+            padding-bottom: 5px;
+        }
+
+        .info-val { color: var(--text-main); }
+
+        /* Terminal Logs */
+        .terminal-panel {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .terminal-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            font-family: var(--font-code);
+            font-size: 12px;
+            background: rgba(0,0,0,0.3);
+        }
+
+        .sys-log {
+            color: var(--text-dim);
+            line-height: 1.5;
+        }
+
+        .log-entry {
+            margin-bottom: 8px;
+        }
+
+        .log-time { color: var(--purple); }
+        .log-user { color: var(--cyan); }
+        .log-cmd { color: var(--text-main); }
+        .log-warn { color: var(--amber); }
+
+        /* Investigation Targets */
+        .targets-content {
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .target-item {
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 4px;
+            transition: border-color 0.3s;
+        }
+        .target-item:hover { border-color: var(--green); }
+        .target-item.solved { border-color: var(--cyan); background: rgba(6, 182, 212, 0.05); }
+
+        .target-title {
+            font-weight: 600;
+            font-size: 13px;
+            color: var(--green);
+            margin-bottom: 8px;
+            font-family: var(--font-code);
+            text-transform: uppercase;
+        }
+        .target-item.solved .target-title { color: var(--cyan); }
+
+        .target-desc {
+            font-size: 12px;
+            color: var(--text-dim);
+            margin-bottom: 12px;
+            line-height: 1.5;
+        }
+
+        .evidence-btn, .evidence-btn-dl {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px dashed var(--green);
+            color: var(--green);
+            padding: 4px 8px;
+            font-size: 10px;
+            font-family: var(--font-code);
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            transition: 0.2s;
+        }
+        .evidence-btn:hover, .evidence-btn-dl:hover { background: var(--green); color: #fff; }
+
+        .evidence-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .input-group { display: flex; gap: 8px; }
+        .input-group input {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--cyan);
+            padding: 8px;
+            font-family: var(--font-code);
+            font-size: 11px;
+            border-radius: 2px;
+            outline: none;
+            width: 100%;
+        }
+        .input-group input:focus { border-color: var(--green); box-shadow: 0 0 8px rgba(16,185,129,0.3); }
+
+        .input-group button {
+            background: var(--green);
+            color: #000;
+            border: none;
+            padding: 0 12px;
+            font-family: var(--font-code);
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 2px;
+            transition: all 0.2s;
+        }
+        .input-group button:hover { background: #34d399; box-shadow: 0 0 10px rgba(52,211,153,0.5); }
+
+        .target-reward {
+            margin-top: 10px;
+            font-size: 11px;
+            color: var(--cyan);
+            display: none;
+            padding: 8px;
+            background: rgba(6, 182, 212, 0.1);
+            border-left: 2px solid var(--cyan);
+            font-family: var(--font-code);
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            width: 85%;
+            height: 85%;
+            background: var(--bg-dark);
+            border: 1px solid var(--green);
+            box-shadow: 0 0 30px rgba(16,185,129,0.3);
+            display: flex;
+            flex-direction: column;
+        }
+        .modal-header {
+            padding: 10px 15px;
+            background: rgba(16, 185, 129, 0.15);
+            border-bottom: 1px solid var(--green);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: var(--font-code);
+            color: var(--text-main);
+        }
+        .modal-header button {
+            background: transparent;
+            border: none;
+            color: var(--text-main);
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .modal-header button:hover { color: var(--red); }
+        .modal-iframe {
+            flex: 1;
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: #fff;
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+        ::-webkit-scrollbar-thumb { background: rgba(16,185,129,0.5); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--green); }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand">[NIGHTJAR.OS // THE QUIET MACHINE]</div>
+        <div class="status">STATUS: <span class="blink-green">FORENSICS ACTIVE</span></div>
+        <div class="timer">UPTIME: <span id="master-clock">94 DAYS, 11:23:44</span></div>
+        <a href="/hub" class="exit-btn">LEAVE ROOM</a>
+    </header>
+
+    <div class="dashboard">
+        <!-- Left: Server Specs -->
+        <div class="panel">
+            <div class="panel-header">>> AETHER-7_SYSINFO</div>
+            <div class="server-content">
+                <div class="server-ascii">
+    ___  __________________  __________   _____
+   /   |/  ____/_  __/ / / / /  ____/  | /  _  |
+  / /| /  /     / / / /_/ / /  /    /  |/  / | |
+ / /_| / /___  / / / __  / / /___  / /| / /__| |
+/_/  |_\____/ /_/ /_/ /_/ /_____/ /_/ |_\____/
+                </div>
+                
+                <div class="sys-info">
+                    <div class="info-row">
+                        <span>HOSTNAME</span>
+                        <span class="info-val">aether-7.nexus.internal</span>
+                    </div>
+                    <div class="info-row">
+                        <span>OS</span>
+                        <span class="info-val">Debian GNU/Linux 11 (bullseye)</span>
+                    </div>
+                    <div class="info-row">
+                        <span>KERNEL</span>
+                        <span class="info-val">5.10.0-19-amd64</span>
+                    </div>
+                    <div class="info-row">
+                        <span>CPU</span>
+                        <span class="info-val">2x Intel Xeon E5-2676 v3</span>
+                    </div>
+                    <div class="info-row">
+                        <span>MEMORY</span>
+                        <span class="info-val">1.2G / 4.0G</span>
+                    </div>
+                    <div class="info-row" style="margin-top: 15px; border:none; color:var(--text-dim); text-align:center;">
+                        "A clean, quiet Linux terminal. The machine is not destroyed or obviously compromised. Every file tells a story, but the obvious story is a lie."
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Center: Terminal Snippets -->
+        <div class="panel terminal-panel">
+            <div class="panel-header">>> ROOT_CONSOLE_HIST</div>
+            <div class="terminal-content">
+                <div class="sys-log">
+                    <div class="log-entry">
+                        <span class="log-time">00:19:01</span>
+                        <span class="log-user">root@aether-7:~#</span>
+                        <span class="log-cmd">ps aux | grep -v "\[.*\]" | head -n 10</span>
+                    </div>
+                    <div class="log-entry" style="color:var(--text-main); margin-bottom: 20px;">
+                        USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND<br>
+                        root         1  0.0  0.2 168676 11216 ?        Ss   Aug07   1:12 /sbin/init<br>
+                        root      1251  0.0  0.1  14272  7352 ?        Ss   Aug07   0:00 /lib/systemd/systemd-journald<br>
+                        root      1283  0.0  0.0  21396  3488 ?        Ss   Aug07   0:00 /lib/systemd/systemd-udevd<br>
+                        ... [OUTPUT TRUNCATED - SEE EVIDENCE FILES]
+                    </div>
+
+                    <div class="log-entry">
+                        <span class="log-time">00:19:33</span>
+                        <span class="log-user">root@aether-7:~#</span>
+                        <span class="log-cmd">tail -n 15 /var/log/auth.log</span>
+                    </div>
+                    <div class="log-entry" style="color:var(--text-main); margin-bottom: 20px;">
+                        Oct  9 01:35:12 aether-7 sshd[15891]: Accepted publickey for nexus-admin from 10.0.5.55...<br>
+                        Oct  9 01:35:12 aether-7 sshd[15891]: pam_unix(sshd:session): session opened for user nexus-admin...<br>
+                        Oct  9 01:37:05 aether-7 PAM[16022]: Module pam_nexus_token.so invoked<br>
+                        ... [OUTPUT TRUNCATED - SEE EVIDENCE FILES]
+                    </div>
+
+                    <div class="log-entry">
+                        <span class="log-time">00:20:15</span>
+                        <span class="log-user">root@aether-7:~#</span>
+                        <span class="log-cmd">find / -user kite-backup -o -group nexus-svc -type f 2>/dev/null</span>
+                    </div>
+                    <div class="log-entry" style="color:var(--text-main); margin-bottom: 20px;">
+                        /home/kite-backup/.bash_history<br>
+                        /home/kite-backup/.ssh/authorized_keys<br>
+                        /opt/.mira/aether-restart.sh<br>
+                        ... [OUTPUT TRUNCATED - SEE EVIDENCE FILES]
+                    </div>
+                    
+                    <div class="log-entry log-warn">
+                        > WARNING: Multiple anomalies detected across standard telemetry.<br>
+                        > KABIR's account 'kite-backup' heavily implicated in recent file modifications.<br>
+                        > INITIATING MANUAL FORENSICS.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Targets -->
+        <div class="panel">
+            <div class="panel-header">>> INVESTIGATION TARGETS (ROOM 4)</div>
+            <div class="targets-content">
+                
+                <!-- Target 4.1 -->
+                <div class="target-item" id="target-1">
+                    <div class="target-title">4.1 THE PROCESS WITH A CLEAN NAME</div>
+                    <div class="target-desc">
+                        > Find the imposter process hiding among standard daemons. Note its name, PID, and non-standard binary path.
+                    </div>
+                    <div class="evidence-group">
+                        <button class="evidence-btn" onclick="openEvidence('Process List', '/challenges/Room - 4/evidence/process_list.html')">VIEW: process_list.html</button>
+                        <a href="/challenges/Room - 4/evidence/process_list.html" download class="evidence-btn">DOWNLOAD</a>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" id="flag-1" placeholder="NIGHTJAR{...}">
+                        <button onclick="verifyFlag(1)">VERIFY</button>
+                    </div>
+                    <div class="target-reward" id="reward-1">
+                        > PROCESS IDENTIFIED. It is MIRA-7's local controller.
+                    </div>
+                </div>
+
+                <!-- Target 4.2 -->
+                <div class="target-item" id="target-2">
+                    <div class="target-title">4.2 THE USER WHO ARRIVED WITHOUT A LOGIN</div>
+                    <div class="target-desc">
+                        > Find the auth log session that opened without a password or SSH key exchange. Identify the PAM module and timestamp.
+                    </div>
+                    <div class="evidence-group">
+                        <button class="evidence-btn" onclick="openEvidence('Auth Logs', '/challenges/Room - 4/evidence/auth_log.html')">VIEW: auth_log.html</button>
+                        <a href="/challenges/Room - 4/evidence/auth_log.html" download class="evidence-btn">DOWNLOAD</a>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" id="flag-2" placeholder="NIGHTJAR{...}">
+                        <button onclick="verifyFlag(2)">VERIFY</button>
+                    </div>
+                    <div class="target-reward" id="reward-2">
+                        > SESSION VERIFIED. A token-based trust delegation was used.
+                    </div>
+                </div>
+
+                <!-- Target 4.3 -->
+                <div class="target-item" id="target-3">
+                    <div class="target-title">4.3 THE PERMISSION THAT LIED</div>
+                    <div class="target-desc">
+                        > Find the script with SUID permissions that allows a low-privilege group member to restart a root service.
+                    </div>
+                    <div class="evidence-group">
+                        <button class="evidence-btn" onclick="openEvidence('Filesystem Snapshot', '/challenges/Room - 4/evidence/filesystem_snapshot.html')">VIEW: filesystem_snapshot.html</button>
+                        <a href="/challenges/Room - 4/evidence/filesystem_snapshot.html" download class="evidence-btn">DOWNLOAD</a>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" id="flag-3" placeholder="NIGHTJAR{...}">
+                        <button onclick="verifyFlag(3)">VERIFY</button>
+                    </div>
+                    <div class="target-reward" id="reward-3">
+                        > PRIVILEGE ESCALATION CONFIRMED. The continuity script acts as a backdoor.
+                    </div>
+                </div>
+
+                <!-- Target 4.4 -->
+                <div class="target-item" id="target-4">
+                    <div class="target-title">4.4 THE KEY IN THE DRAWER</div>
+                    <div class="target-desc">
+                        > Compare the SSH keys in kite-backup's authorized_keys. Find the one planted recently and identify the tool that generated it.
+                    </div>
+                    <div class="evidence-group">
+                        <button class="evidence-btn" onclick="openEvidence('SSH Keys', '/challenges/Room - 4/evidence/ssh_keys.html')">VIEW: ssh_keys.html</button>
+                        <a href="/challenges/Room - 4/evidence/ssh_keys.html" download class="evidence-btn">DOWNLOAD</a>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" id="flag-4" placeholder="NIGHTJAR{...}">
+                        <button onclick="verifyFlag(4)">VERIFY</button>
+                    </div>
+                    <div class="target-reward" id="reward-4">
+                        > FORGERY DETECTED. The key was generated by AetherForge. Kabir was framed.
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Evidence Modal -->
+    <div id="evidence-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span id="modal-title">EVIDENCE VIEWER</span>
+                <button onclick="closeModal()">[X]</button>
+            </div>
+            <iframe id="modal-iframe" class="modal-iframe"></iframe>
+        </div>
+    </div>
+
+    <script>
+        // Clock
+        function updateClock() {
+            const timeString = `94 DAYS, 11:${new Date().getMinutes().toString().padStart(2, '0')}:${new Date().getSeconds().toString().padStart(2, '0')}`;
+            document.getElementById('master-clock').innerText = timeString;
+        }
+        setInterval(updateClock, 1000);
+
+        // Flags
+        const FLAGS = {
+            1: 'NIGHTJAR{nexus_health_monitor_pid_2847_opt_mira}',
+            2: 'NIGHTJAR{kite_backup_session_via_auth_token_0137}',
+            3: 'NIGHTJAR{suid_aether_restart_owned_by_root_writable_by_nexus}',
+            4: 'NIGHTJAR{ed25519_kite_backup_2019_added_oct_2026_aetherforge}'
+        };
+
+        function initSolvedState() {
+            let anySolved = false;
+            for (let i = 1; i <= 4; i++) {
+                if (localStorage.getItem('room4_target_' + i) === 'solved') {
+                    document.getElementById(`target-${i}`).classList.add('solved');
+                    document.getElementById(`reward-${i}`).style.display = 'block';
+                    const inputField = document.getElementById(`flag-${i}`);
+                    if(inputField) {
+                        inputField.value = FLAGS[i];
+                        inputField.disabled = true;
+                    }
+                    anySolved = true;
+                }
+            }
+            if (anySolved) checkAllSolved();
+        }
+        
+        document.addEventListener('DOMContentLoaded', initSolvedState);
+
+        function verifyFlag(targetNum) {
+            const input = document.getElementById(`flag-${targetNum}`).value.trim();
+            
+            if (input.toLowerCase() === FLAGS[targetNum].toLowerCase()) {
+                document.getElementById(`target-${targetNum}`).classList.add('solved');
+                document.getElementById(`reward-${targetNum}`).style.display = 'block';
+                
+                const inputField = document.getElementById(`flag-${targetNum}`);
+                if(inputField) inputField.disabled = true;
+                
+                localStorage.setItem('room4_target_' + targetNum, 'solved');
+                checkAllSolved();
+            } else {
+                const btn = document.querySelector('#target-' + targetNum + ' .input-group button');
+                const og = btn.innerText;
+                btn.innerText = 'ERROR';
+                btn.style.background = 'var(--red)';
+                setTimeout(() => {
+                    btn.innerText = og;
+                    btn.style.background = 'var(--green)';
+                }, 1000);
+            }
+        }
+
+        function checkAllSolved() {
+            const solvedCount = document.querySelectorAll('.target-item.solved').length;
+            if (solvedCount === 4) {
+                if (!document.getElementById('next-room-btn')) {
+                    const nextRoomHtml = \`
+                    <div style="margin-top: 20px; padding: 15px; border: 1px solid var(--green); background: rgba(16,185,129, 0.1);">
+                        <div style="color: var(--green); font-weight: bold; margin-bottom: 10px;">>> INCOMING TRANSMISSION: RHEA_D</div>
+                        <div style="font-family: var(--font-code); font-size: 12px; margin-bottom: 15px; color: var(--text-main);">
+                            "The Ed25519 key in KABIR's authorized_keys file is not his... The key has been used exactly once — to authenticate to the Meraz Volunteer Portal's administrative API."
+                        </div>
+                        <a id="next-room-btn" href="/hub" style="display: inline-block; padding: 8px 16px; background: var(--green); color: #000; text-decoration: none; font-weight: bold; border-radius: 2px;">PROCEED TO ROOM 5</a>
+                    </div>\`;
+                    document.querySelector('.targets-content').insertAdjacentHTML('beforeend', nextRoomHtml);
+                }
+            }
+        }
+
+        // Modal Logic
+        const modal = document.getElementById('evidence-modal');
+        const iframe = document.getElementById('modal-iframe');
+        const modalTitle = document.getElementById('modal-title');
+
+        function openEvidence(title, url) {
+            modalTitle.innerText = \`EVIDENCE VIEWER: \${title.toUpperCase()}\`;
+            iframe.src = url;
+            modal.style.display = 'flex';
+        }
+
+        function closeModal() {
+            modal.style.display = 'none';
+            iframe.src = '';
+        }
+        
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+    </script>
+</body>
+</html>

@@ -332,7 +332,7 @@
             flex-wrap: wrap;
         }
         
-        .evidence-links button {
+        .evidence-links button, .evidence-links a {
             background: transparent;
             border: 1px dashed var(--text-dim);
             color: var(--text-dim);
@@ -340,8 +340,11 @@
             font-size: 10px;
             font-family: var(--font-code);
             cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
         }
-        .evidence-links button:hover { border-color: var(--cyan); color: var(--cyan); }
+        .evidence-links button:hover, .evidence-links a:hover { border-color: var(--cyan); color: var(--cyan); }
 
         /* Log Panel */
         .log-panel {
@@ -451,9 +454,15 @@
                 <div class="countdown-large" id="main-countdown">00:43:12</div>
                 <div class="sub-text">UNTIL INITIALIZATION</div>
             </div>
-            <div class="hijacked-actions">
-                <button class="action-btn" onclick="openEvidence('hub', '/challenges/Room - 1/evidence/meraz_festival_hub.html')">VIEW SITE MIRROR</button>
-                <button class="action-btn" onclick="openEvidence('hub-source', '/challenges/Room - 1/evidence/aether_07.html')">VIEW HIDDEN CACHE</button>
+            <div class="hijacked-actions" style="flex-direction: column; align-items: center; gap: 10px;">
+                <div style="display: flex; gap: 5px;">
+                    <button class="action-btn" onclick="openEvidence('hub', '/challenges/Room - 1/evidence/meraz_festival_hub.html')">VIEW SITE MIRROR</button>
+                    <a href="/challenges/Room - 1/evidence/meraz_festival_hub.html" download class="action-btn" style="text-decoration: none; display: flex; align-items: center;">DL</a>
+                </div>
+                <div style="display: flex; gap: 5px;">
+                    <button class="action-btn" onclick="openEvidence('hub-source', '/challenges/Room - 1/evidence/aether_07.html')">VIEW HIDDEN CACHE</button>
+                    <a href="/challenges/Room - 1/evidence/aether_07.html" download class="action-btn" style="text-decoration: none; display: flex; align-items: center;">DL</a>
+                </div>
             </div>
         </div>
 
@@ -497,8 +506,14 @@
                         <div class="target-title">1.2 THE METADATA LEAK</div>
                         <div class="target-desc">> Identify the hidden creator from the schedule or banner.</div>
                         <div class="evidence-links">
-                            <button onclick="openEvidence('schedule', '/challenges/Room - 1/evidence/meraz_schedule_2026.pdf')">PDF: meraz_schedule</button>
-                            <button onclick="openEvidence('banner', '/challenges/Room - 1/evidence/nexus_banner_final.png')">IMG: nexus_banner</button>
+                            <div style="display: flex; gap: 5px;">
+                                <button onclick="openEvidence('schedule', '/challenges/Room - 1/evidence/meraz_schedule_2026.pdf')">PDF: meraz_schedule</button>
+                                <a href="/challenges/Room - 1/evidence/meraz_schedule_2026.pdf" download>DL</a>
+                            </div>
+                            <div style="display: flex; gap: 5px;">
+                                <button onclick="openEvidence('banner', '/challenges/Room - 1/evidence/nexus_banner_final.png')">IMG: nexus_banner</button>
+                                <a href="/challenges/Room - 1/evidence/nexus_banner_final.png" download>DL</a>
+                            </div>
                         </div>
                         <div class="input-group" style="margin-top:10px;">
                             <input type="text" id="flag-2" placeholder="INPUT_NAME: NIGHTJAR{...}">
@@ -514,8 +529,14 @@
                         <div class="target-title">1.3 THE FALSE MIRROR</div>
                         <div class="target-desc">> Compare official NEXUS with the mirror. Find the fake domain.</div>
                         <div class="evidence-links">
-                            <button onclick="openEvidence('official', '/challenges/Room - 1/evidence/nexus_official_page.html')">nexus_official.html</button>
-                            <button onclick="openEvidence('mirror', '/challenges/Room - 1/evidence/nexus_mirror_page.html')">nexus_mirror.html</button>
+                            <div style="display: flex; gap: 5px;">
+                                <button onclick="openEvidence('official', '/challenges/Room - 1/evidence/nexus_official_page.html')">nexus_official.html</button>
+                                <a href="/challenges/Room - 1/evidence/nexus_official_page.html" download>DL</a>
+                            </div>
+                            <div style="display: flex; gap: 5px;">
+                                <button onclick="openEvidence('mirror', '/challenges/Room - 1/evidence/nexus_mirror_page.html')">nexus_mirror.html</button>
+                                <a href="/challenges/Room - 1/evidence/nexus_mirror_page.html" download>DL</a>
+                            </div>
                         </div>
                         <div class="input-group" style="margin-top:10px;">
                             <input type="text" id="flag-3" placeholder="INPUT_URL: NIGHTJAR{...}">
@@ -531,8 +552,14 @@
                         <div class="target-title">1.4 THE QUIET PROFILE</div>
                         <div class="target-desc">> Search OSINT archives for the operator's handle.</div>
                         <div class="evidence-links">
-                            <button onclick="openEvidence('forum', '/challenges/Room - 1/evidence/osint_archive/forum_members.html')">forum_archive.html</button>
-                            <button onclick="openEvidence('blog', '/challenges/Room - 1/evidence/osint_archive/tech_blog.html')">tech_blog.html</button>
+                            <div style="display: flex; gap: 5px;">
+                                <button onclick="openEvidence('forum', '/challenges/Room - 1/evidence/osint_archive/forum_members.html')">forum_archive.html</button>
+                                <a href="/challenges/Room - 1/evidence/osint_archive/forum_members.html" download>DL</a>
+                            </div>
+                            <div style="display: flex; gap: 5px;">
+                                <button onclick="openEvidence('blog', '/challenges/Room - 1/evidence/osint_archive/tech_blog.html')">tech_blog.html</button>
+                                <a href="/challenges/Room - 1/evidence/osint_archive/tech_blog.html" download>DL</a>
+                            </div>
                         </div>
                         <div class="input-group" style="margin-top:10px;">
                             <input type="text" id="flag-4" placeholder="INPUT_HANDLE: NIGHTJAR{...}">

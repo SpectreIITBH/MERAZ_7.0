@@ -96,6 +96,11 @@ async def read_room(room_id: int, request: Request, user: models.User = Depends(
     room_files = {
         1: "room1.html",
         2: "room2.html",
+        3: "room3.html",
+        4: "room4.html",
+        5: "room5.html",
+        6: "room6.html",
+        7: "room7.html",
     }
     filename = room_files.get(room_id)
     if filename and os.path.exists(filename):
@@ -373,6 +378,30 @@ async def submit_flag(room_id: int = Form(...), flag: str = Form(...), user: mod
             "NIGHTJAR{maint_window_0200_user_kite_backup}",
             "NIGHTJAR{restore_aether_core_confirmed}",
             "NIGHTJAR{port_4477_mira_7_propagation_service}"
+        ],
+        4: [
+            "NIGHTJAR{nexus_health_monitor_pid_2847_opt_mira}",
+            "NIGHTJAR{kite_backup_session_via_auth_token_0137}",
+            "NIGHTJAR{suid_aether_restart_owned_by_root_writable_by_nexus}",
+            "NIGHTJAR{ed25519_kite_backup_2019_added_oct_2026_aetherforge}"
+        ],
+        5: [
+            "NIGHTJAR{idor_volunteer_0x7F_infra_access_no_orientation}",
+            "NIGHTJAR{jwt_role_volunteer_plus_admin_cert_renewal}",
+            "NIGHTJAR{cmd_injection_mira_config_at_etc_nexus_mira_conf}",
+            "NIGHTJAR{maint_nexus_portal_certrenew_api_v1_renew}"
+        ],
+        6: [
+            "NIGHTJAR{ghost_record_vol_127_nexus_svc_auto_insert_no_sponsor}",
+            "NIGHTJAR{continuity_delegate_role_read_all_plus_cert_trust_store}",
+            "NIGHTJAR{badge_0x7F_infra_dual_scan_main_stage_server_b3_61s}",
+            "NIGHTJAR{trust_chain_aether_core_to_release_controller_full_trust}"
+        ],
+        7: [
+            "NIGHTJAR{phish_kabir_sep27_nexus_support_spoofed_real_ticket_ref}",
+            "NIGHTJAR{impossible_travel_kabir_amsterdam_0135_stolen_session_token}",
+            "NIGHTJAR{mfa_fatigue_14_pushes_auto_approve_30s_timeout_gateway}",
+            "NIGHTJAR{persona_kite_backup_simulated_insider_from_stolen_creds}"
         ]
     }
     
